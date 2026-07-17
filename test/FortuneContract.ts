@@ -11,12 +11,12 @@ describe("FortuneContract", async function () {
     for (const [roll, fortuneId] of cases) assert.equal(await contract.read.previewFortuneForRoll([roll]), fortuneId);
   });
 
-  it("emits records and blocks the sixth draw from the same wallet that day", async function () {
+  it("emits records and blocks the eleventh draw from the same wallet that day", async function () {
     const contract = await viem.deployContract("FortuneContract");
     const [owner] = await viem.getWalletClients();
     await viem.assertions.emit(contract.write.drawFortune(), contract, "FortuneDrawn");
-    for (let i = 1; i < 5; i++) await contract.write.drawFortune();
-    assert.equal(await contract.read.getRecordCount([owner.account.address]), 5n);
+    for (let i = 1; i < 10; i++) await contract.write.drawFortune();
+    assert.equal(await contract.read.getRecordCount([owner.account.address]), 10n);
     await viem.assertions.revertWithCustomError(contract.write.drawFortune(), contract, "DailyLimitReached");
   });
 

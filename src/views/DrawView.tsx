@@ -92,7 +92,7 @@ export function DrawView() {
       return;
     }
     if (runtimeMode === "demo" && !canDrawDemoToday(demoAddress)) {
-      setError("这个钱包今天的五次签运已经全部用完。请在 UTC 00:00 后再来，或连接另一个钱包。 ");
+      setError("这个钱包今天的十次签运已经全部用完。请在 UTC 00:00 后再来，或连接另一个钱包。 ");
       setPhase("error");
       return;
     }
@@ -139,7 +139,7 @@ export function DrawView() {
       </section>
       <div className="dialogue-panel">
         <p>{phase === "confirming" && <LoaderCircle className="spin" size={20}/>} {dialogue[phase]}</p>
-        {!isConnected && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · 连接钱包后可正式上链</small>}
+        {!isConnected && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · 仅保存在本设备，不会补录上链</small>}
         {error && <small><AlertTriangle size={14}/>{error}</small>}
       </div>
       {guestLimitReached ? <ConnectButton.Custom>{({ openConnectModal }) => <button className="primary-button ritual-button" onClick={openConnectModal}><Sparkles/> 连接钱包继续求签</button>}</ConnectButton.Custom> : <button className="primary-button ritual-button" onClick={beginRitual} disabled={processing}>

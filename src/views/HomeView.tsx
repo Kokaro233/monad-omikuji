@@ -2,11 +2,38 @@
 
 import { motion } from "framer-motion";
 import { BadgeCheck, Coins, Gauge, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Frame, useOmikuji } from "@/src/components/OmikujiApp";
 import { runtimeMode } from "@/src/lib/runtime";
+import { supabase } from "@/src/lib/supabase";
 
 export function HomeView() {
-  const { navigate, history } = useOmikuji();
+  const { navigate } = useOmikuji();
+  const [onchainDrawCount, setOnchainDrawCount] = useState<number | null>(null);
+  const [countUnavailable, setCountUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (runtimeMode !== "live" || !supabase) return;
+    const client = supabase;
+    let cancelled = false;
+    async function readVerifiedCount() {
+      try {
+        const { data, error } = await client.rpc("get_verified_fortune_count");
+        if (error) throw error;
+        if (!cancelled) setOnchainDrawCount(Number(data ?? 0));
+      } catch {
+        if (!cancelled) setCountUnavailable(true);
+      }
+    }
+    void readVerifiedCount();
+    return () => { cancelled = true; };
+  }, []);
+
+  const countLabel = runtimeMode === "demo"
+    ? "演示模式不计入链上"
+    : countUnavailable
+      ? "待同步验证数据接口"
+      : "已核验 Monad 成功交易";
   return (
     <div className="home-layout">
       <aside className="home-left">
@@ -24,7 +51,7 @@ export function HomeView() {
             <li><b>4</b><span>收藏并分享祝福</span></li>
           </ol>
         </Frame>
-        <div className="fortune-count"><span>✦ 链上御签总数</span><strong>{(12458 + history.length).toLocaleString()} <i>✿</i></strong><small>{runtimeMode === "demo" ? "包含本地演示签运" : "已记录于 Monad"}</small></div>
+        <div className="fortune-count"><span>✦ 已验证御签总数</span><strong>{onchainDrawCount === null ? "—" : onchainDrawCount.toLocaleString()} <i>✿</i></strong><small>{countLabel}</small></div>
       </aside>
 
       <section className="maiden-stage">
@@ -34,7 +61,7 @@ export function HomeView() {
         </motion.div>
         <motion.img src="/assets/fortune-box.png" alt="Omikuji fortune box" className="home-fortune-box" animate={{ y: [0, -3, 0] }} transition={{ duration: 2.2, repeat: Infinity }} />
         <button className="primary-button hero-cta" onClick={() => navigate("draw")}><span>✦</span> 求取御神签 <span>✦</span></button>
-        <p className="once-note">每个钱包每日可求五签 · 以 UTC 日期为准</p>
+        <p className="once-note">每个钱包每日可求十签 · 以 UTC 日期为准</p>
       </section>
 
       <aside className="home-right">

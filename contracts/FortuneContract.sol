@@ -6,7 +6,7 @@ pragma solidity ^0.8.28;
 /// @dev Demo randomness is not safe for valuable outcomes. A production release
 ///      should use a verifiable randomness provider such as Chainlink VRF.
 contract FortuneContract {
-    uint256 public constant MAX_DAILY_DRAWS = 5;
+    uint256 public constant MAX_DAILY_DRAWS = 10;
     struct FortuneRecord {
         address wallet;
         uint256 fortuneId;

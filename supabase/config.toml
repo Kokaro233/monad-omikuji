@@ -1,0 +1,14 @@
+project_id = "monad-omikuji"
+
+[auth]
+site_url = "https://monad-omikuji.vercel.app"
+additional_redirect_urls = ["https://monad-omikuji.vercel.app/profile", "http://localhost:5173/profile"]
+
+[auth.email]
+enable_signup = true
+otp_length = 6
+otp_expiry = 600
+
+[auth.email.template.magic_link]
+subject = "{{ .Token }}｜Monad Omikuji 登录验证码"
+content_path = "./supabase/templates/magic-link.html"

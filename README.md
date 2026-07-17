@@ -25,7 +25,7 @@ Monad Omikuji is an animated pixel-art Web3 fortune ritual for Monad Testnet. Vi
 - Seven outcomes: 大吉, 中吉, 小吉, 吉, 末吉, 凶 and 大凶.
 - SSR / SR / R presentation with career, love and wealth ratings.
 - RPG-style collection, profile and wallet-claim experience.
-- Up to five draws per wallet per UTC day.
+- Up to ten draws per wallet per UTC day, plus five device-local guest previews before wallet connection.
 
 ## Important Demo Notice
 
@@ -84,7 +84,7 @@ Never place a private key or a Supabase `service_role` key in a `VITE_` variable
 
 ## Smart Contract
 
-`FortuneContract` exposes `drawFortune`, `canDraw`, `getLatestFortune` and record-reading functions. It emits `FortuneDrawn` and enforces five draws per wallet per UTC day.
+`FortuneContract` exposes `drawFortune`, `canDraw`, `getLatestFortune` and record-reading functions. It emits `FortuneDrawn` and enforces ten draws per wallet per UTC day.
 
 Current Monad Testnet deployment:
 
@@ -119,10 +119,14 @@ The included randomness combines `block.prevrandao`, timestamp, caller and draw 
 
 1. Create a Supabase project.
 2. Run `supabase/migrations/202607170001_monad_omikuji.sql`.
-3. Enable Email Magic Link authentication.
-4. Optionally configure Google OAuth and set `VITE_ENABLE_GOOGLE_AUTH=true`.
-5. Deploy `supabase/functions/wallet-claim`.
-6. Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MONAD_RPC_URL` and `CONTRACT_ADDRESS` as Edge Function secrets.
+3. Enable email sign-in and sign-up in **Authentication → Providers → Email**.
+4. In **Authentication → Email Templates → Magic Link**, replace the body with `supabase/templates/magic-link.html`. Keep `{{ .Token }}` so the email displays the six-digit code instead of only a sign-in link.
+5. Set the subject to `{{ .Token }}｜Monad Omikuji 登录验证码`. The code expires after 10 minutes; the matching local settings are documented in `supabase/config.toml`.
+6. Optionally configure Google OAuth and set `VITE_ENABLE_GOOGLE_AUTH=true`.
+7. Deploy `supabase/functions/wallet-claim`.
+8. Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MONAD_RPC_URL` and `CONTRACT_ADDRESS` as Edge Function secrets.
+
+The frontend already implements the complete “request code → enter six digits → verify and sign in” flow. Uploading `supabase/config.toml` does not change the hosted Supabase email template automatically; the dashboard template must contain `{{ .Token }}`.
 
 The verification function checks the authenticated user, one-time nonce, recovered signer, contract address, successful transaction receipt and emitted `FortuneDrawn` event before claiming a fortune.
 

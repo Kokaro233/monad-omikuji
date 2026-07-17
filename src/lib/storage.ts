@@ -4,7 +4,8 @@ const HISTORY_KEY = "monad-omikuji:history:v1";
 const PROFILE_KEY = "monad-omikuji:profile:v1";
 const LAST_RESULT_KEY = "monad-omikuji:last-result:v1";
 const GUEST_TRIALS_KEY = "monad-omikuji:guest-trials:v1";
-export const GUEST_TRIAL_LIMIT = 3;
+export const GUEST_TRIAL_LIMIT = 5;
+export const DAILY_DRAW_LIMIT = 10;
 
 export const defaultProfile: DemoProfile = {
   id: "guest",
@@ -42,11 +43,11 @@ export function canDrawDemoToday(address: string) {
   const today = new Date().toISOString().slice(0, 10);
   return storage.getHistory().filter(
     (item) => item.walletAddress.toLowerCase() === address.toLowerCase() && item.createdAt.slice(0, 10) === today,
-  ).length < 5;
+  ).length < DAILY_DRAW_LIMIT;
 }
 
 export function demoDrawsRemaining(address: string) {
   const today = new Date().toISOString().slice(0, 10);
   const used = storage.getHistory().filter((item) => item.walletAddress.toLowerCase() === address.toLowerCase() && item.createdAt.slice(0, 10) === today).length;
-  return Math.max(0, 5 - used);
+  return Math.max(0, DAILY_DRAW_LIMIT - used);
 }
