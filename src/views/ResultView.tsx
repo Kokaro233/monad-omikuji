@@ -24,23 +24,25 @@ export function ResultView() {
 
   return (
     <div className={`result-layout theme-${fortune.theme}`}>
-      <div className="result-rays" aria-hidden="true" />
       <section className="result-card-wrap">
-        <div className="result-label">你的御神签</div>
-        <motion.article className="fortune-card" initial={{ rotateY: 90, scale: .7 }} animate={{ rotateY: 0, scale: 1 }} transition={{ type: "spring", stiffness: 90, damping: 13 }}>
-          <div className="card-corner top-left">❀</div><div className="card-corner top-right">❀</div>
-          <span className="rarity">{fortune.rarity}</span>
-          <h1>{fortune.kanji}</h1>
-          <h2>{fortune.nameZh}</h2>
-          <div className="divider">✦</div>
-          <dl className="stats">
-            <div><dt>事业</dt><dd>{stars(fortune.career)}</dd></div>
-            <div><dt>姻缘</dt><dd>{stars(fortune.love)}</dd></div>
-            <div><dt>财运</dt><dd>{stars(fortune.wealth)}</dd></div>
-          </dl>
-          <p>{fortune.messageZh}</p><small>{fortune.message}</small>
-          <div className="card-flower">✿</div>
-        </motion.article>
+        <div className="fortune-stage">
+          <div className="result-rays" aria-hidden="true" />
+          <div className="result-label">你的御神签</div>
+          <motion.article className="fortune-card" initial={{ rotateY: 90, scale: .7 }} animate={{ rotateY: 0, scale: 1 }} transition={{ type: "spring", stiffness: 90, damping: 13 }}>
+            <div className="card-corner top-left">❀</div><div className="card-corner top-right">❀</div>
+            <span className="rarity">{fortune.rarity}</span>
+            <h1>{fortune.kanji}</h1>
+            <h2>{fortune.nameZh}</h2>
+            <div className="divider">✦</div>
+            <dl className="stats">
+              <div><dt>事业</dt><dd>{stars(fortune.career)}</dd></div>
+              <div><dt>姻缘</dt><dd>{stars(fortune.love)}</dd></div>
+              <div><dt>财运</dt><dd>{stars(fortune.wealth)}</dd></div>
+            </dl>
+            <p>{fortune.messageZh}</p><small>{fortune.message}</small>
+            <div className="card-flower">✿</div>
+          </motion.article>
+        </div>
         <div className="result-actions">
           <button className="red-button" onClick={share}><Share2 size={17}/>{shared ? "已复制" : "分享御签"}</button>
           <button className="purple-button" onClick={() => navigate("draw")}><RotateCcw size={17}/> 再求一签</button>

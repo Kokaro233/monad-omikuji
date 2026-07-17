@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, LogIn, Mail, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import { Frame, useOmikuji } from "@/src/components/OmikujiApp";
 import { requestEmailCode, signInWithGoogle, supabase, verifyEmailCode } from "@/src/lib/supabase";
@@ -17,6 +17,12 @@ export function ProfileView() {
   const [busy, setBusy] = useState(false);
   const [emailCode, setEmailCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   async function requestCode() {
     if (!email.includes("@")) { setNotice("请输入有效的邮箱地址。"); return; }
