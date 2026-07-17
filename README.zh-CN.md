@@ -11,7 +11,11 @@
 
 Monad Omikuji 是一款运行于 Monad Testnet 的像素风链上抽签 DApp。访客可以进入月下神社，完成祈愿仪式，抽取七级御神签，将结果记录在链上，并把认领后的签文收入个人御签阁。
 
-![Monad Omikuji 项目预览](./public/og.png)
+## 项目预览
+
+[![Monad Omikuji 桌面端项目预览](./public/readme-preview.jpg)](https://monad-omikuji.vercel.app/)
+
+**[进入线上神社体验 →](https://monad-omikuji.vercel.app/)**
 
 ## 产品体验
 

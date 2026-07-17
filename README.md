@@ -11,7 +11,11 @@
 
 Monad Omikuji is an animated pixel-art Web3 fortune ritual for Monad Testnet. Visitors enter a moonlit shrine, draw one of seven weighted omikuji outcomes, record the result on-chain, and keep claimed fortunes in a personal collection.
 
-![Monad Omikuji preview](./public/og.png)
+## Preview
+
+[![Monad Omikuji desktop preview](./public/readme-preview.jpg)](https://monad-omikuji.vercel.app/)
+
+**[Enter the live shrine →](https://monad-omikuji.vercel.app/)**
 
 ## Product Experience
 
