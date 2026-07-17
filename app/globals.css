@@ -27,7 +27,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .topbar { position: relative; z-index: 20; height: 68px; display: flex; align-items: center; gap: 32px; padding: 0 3.2vw; background: linear-gradient(180deg, rgba(12,8,34,.97), rgba(22,9,28,.86)); border-bottom: 2px solid var(--gold-deep); box-shadow: 0 4px 22px rgba(0,0,0,.4); }
 .brand { border: 0; background: none; display: flex; gap: 10px; align-items: center; color: var(--gold); font-weight: 800; letter-spacing: .13em; cursor: pointer; white-space: nowrap; }
-.brand__monad{position:relative;width:20px;height:20px;flex:none;border-radius:5px;background:#836ef9;transform:rotate(45deg);box-shadow:0 0 6px #836ef9,0 0 14px rgba(131,110,249,.7)}.brand__monad::after{content:"";position:absolute;inset:5px;border-radius:2px;background:#170b2a}
+.brand__monad{position:relative;width:20px;height:20px;flex:none;border-radius:5px;background:#ff7eac;transform:rotate(45deg);box-shadow:0 0 6px #ff7eac,0 0 14px rgba(255,103,160,.72)}.brand__monad::after{content:"";position:absolute;inset:5px;border-radius:2px;background:#170b2a}
 .desktop-nav { display: flex; gap: 28px; margin: auto; }
 .desktop-nav button { border: 0; background: transparent; padding: 22px 2px 17px; color: #f4cba1; cursor: pointer; position: relative; }
 .desktop-nav button::after { content: ""; position: absolute; left: 50%; right: 50%; bottom: 8px; height: 2px; background: var(--gold); transition: .2s; }
