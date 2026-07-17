@@ -1,5 +1,6 @@
 "use client";
 
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, LoaderCircle, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,7 +10,7 @@ import { useOmikuji } from "@/src/components/OmikujiApp";
 import { fortuneContractAbi } from "@/src/config/contract";
 import { drawWeightedFortune } from "@/src/lib/fortunes";
 import { runtime, runtimeMode } from "@/src/lib/runtime";
-import { canDrawDemoToday } from "@/src/lib/storage";
+import { canDrawDemoToday, GUEST_TRIAL_LIMIT, storage } from "@/src/lib/storage";
 import type { DrawPhase, DrawResult } from "@/src/types";
 
 const dialogue: Record<DrawPhase, string> = {
@@ -35,14 +36,18 @@ export function DrawView() {
   const [phase, setPhase] = useState<DrawPhase>("ready");
   const [error, setError] = useState("");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [guestTrials, setGuestTrials] = useState(0);
   const { data: receipt } = useWaitForTransactionReceipt({ hash: txHash, confirmations: 1 });
   const processing = !["ready", "revealed", "error"].includes(phase);
+  const guestLimitReached = runtimeMode === "live" && !isConnected && guestTrials >= GUEST_TRIAL_LIMIT;
   const demoAddress = address ?? "0xDemoShrineKeeper000000000000000000000001";
   const completedRef = useRef(false);
 
+  useEffect(() => { setGuestTrials(storage.getGuestTrialCount()); }, []);
+
   const character = phase === "ready" || phase === "error" ? "/assets/maiden-idle.png" : phase === "revealed" ? "/assets/maiden-happy.png" : "/assets/maiden-praying.png";
 
-  async function completeResult(fortuneId: number, hash: string, blockNumber?: bigint) {
+  async function completeResult(fortuneId: number, hash: string, blockNumber?: bigint, guestTrial = false) {
     if (completedRef.current) return;
     completedRef.current = true;
     setPhase("paper");
@@ -55,9 +60,9 @@ export function DrawView() {
       blockNumber: blockNumber?.toString(),
       createdAt: new Date().toISOString(),
       chainId: 10143,
-      claimed: runtimeMode === "demo",
+      claimed: runtimeMode === "demo" || guestTrial,
       favorite: false,
-      mode: runtimeMode,
+      mode: guestTrial ? "demo" : runtimeMode,
     };
     addResult(result);
     setPhase("revealed");
@@ -80,8 +85,9 @@ export function DrawView() {
   async function beginRitual() {
     setError("");
     completedRef.current = false;
-    if (runtimeMode === "live" && !isConnected) {
-      setError("开始仪式前，请先连接钱包。你也可以清空链上配置，使用演示模式体验。 ");
+    const guestTrial = runtimeMode === "live" && !isConnected;
+    if (guestTrial && guestTrials >= GUEST_TRIAL_LIMIT) {
+      setError("三次访客体验已经用完，请连接钱包后继续求取链上御神签。 ");
       setPhase("error");
       return;
     }
@@ -94,11 +100,12 @@ export function DrawView() {
       setPhase("praying"); await delay(1050);
       setPhase("shaking"); await delay(1800);
       setPhase("stick"); await delay(1100);
-      if (runtimeMode === "demo") {
+      if (runtimeMode === "demo" || guestTrial) {
         setPhase("confirming"); await delay(1400);
         const fortune = drawWeightedFortune();
         const hash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("")}`;
-        await completeResult(fortune.id, hash);
+        if (guestTrial) setGuestTrials(storage.useGuestTrial());
+        await completeResult(fortune.id, hash, undefined, guestTrial);
         return;
       }
       if (chainId !== 10143) await switchChainAsync({ chainId: 10143 });
@@ -132,11 +139,12 @@ export function DrawView() {
       </section>
       <div className="dialogue-panel">
         <p>{phase === "confirming" && <LoaderCircle className="spin" size={20}/>} {dialogue[phase]}</p>
+        {!isConnected && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · 连接钱包后可正式上链</small>}
         {error && <small><AlertTriangle size={14}/>{error}</small>}
       </div>
-      <button className="primary-button ritual-button" onClick={beginRitual} disabled={processing}>
+      {guestLimitReached ? <ConnectButton.Custom>{({ openConnectModal }) => <button className="primary-button ritual-button" onClick={openConnectModal}><Sparkles/> 连接钱包继续求签</button>}</ConnectButton.Custom> : <button className="primary-button ritual-button" onClick={beginRitual} disabled={processing}>
         {processing ? <><LoaderCircle className="spin"/> 仪式进行中</> : phase === "error" ? <><RotateCcw/> 再试一次</> : <><Sparkles/> 开始祈愿</>}
-      </button>
+      </button>}
     </div>
   );
 }

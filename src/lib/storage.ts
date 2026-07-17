@@ -3,6 +3,8 @@ import type { DemoProfile, DrawResult } from "@/src/types";
 const HISTORY_KEY = "monad-omikuji:history:v1";
 const PROFILE_KEY = "monad-omikuji:profile:v1";
 const LAST_RESULT_KEY = "monad-omikuji:last-result:v1";
+const GUEST_TRIALS_KEY = "monad-omikuji:guest-trials:v1";
+export const GUEST_TRIAL_LIMIT = 3;
 
 export const defaultProfile: DemoProfile = {
   id: "guest",
@@ -28,6 +30,12 @@ export const storage = {
   saveProfile: (profile: DemoProfile) => localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)),
   getLastResult: () => read<DrawResult | null>(LAST_RESULT_KEY, null),
   saveLastResult: (result: DrawResult) => localStorage.setItem(LAST_RESULT_KEY, JSON.stringify(result)),
+  getGuestTrialCount: () => read<number>(GUEST_TRIALS_KEY, 0),
+  useGuestTrial: () => {
+    const next = Math.min(GUEST_TRIAL_LIMIT, read<number>(GUEST_TRIALS_KEY, 0) + 1);
+    localStorage.setItem(GUEST_TRIALS_KEY, JSON.stringify(next));
+    return next;
+  },
 };
 
 export function canDrawDemoToday(address: string) {

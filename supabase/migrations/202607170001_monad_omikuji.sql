@@ -65,6 +65,12 @@ alter table public.wallets enable row level security;
 alter table public.fortunes enable row level security;
 alter table public.wallet_nonces enable row level security;
 
+drop policy if exists "profiles_select_own" on public.profiles;
+drop policy if exists "profiles_update_own" on public.profiles;
+drop policy if exists "wallets_select_own" on public.wallets;
+drop policy if exists "fortunes_select_own" on public.fortunes;
+drop policy if exists "fortunes_update_own" on public.fortunes;
+
 create policy "profiles_select_own" on public.profiles for select using (auth.uid() = id);
 create policy "profiles_update_own" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
 create policy "wallets_select_own" on public.wallets for select using (auth.uid() = user_id);
