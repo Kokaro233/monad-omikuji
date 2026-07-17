@@ -1,0 +1,49 @@
+{
+  "name": "monad-omikuji",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:contract": "hardhat test",
+    "contract:check": "node scripts/check-contract.mjs",
+    "contract:deploy:viem": "node scripts/deploy-contract.mjs",
+    "contract:compile": "hardhat compile",
+    "contract:deploy": "hardhat ignition deploy ignition/modules/FortuneContract.ts --network monadTestnet",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.2.11",
+    "@supabase/supabase-js": "^2.110.7",
+    "@tanstack/react-query": "^5.101.2",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.25.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "viem": "^2.55.2",
+    "wagmi": "^2.19.5"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.7",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "dotenv": "^17.4.2",
+    "hardhat": "^3.10.0",
+    "jsdom": "^29.1.1",
+    "solc": "^0.8.36",
+    "typescript": "5.9.3",
+    "vite": "8.0.13",
+    "vitest": "^4.1.10"
+  },
+  "type": "module"
+}
