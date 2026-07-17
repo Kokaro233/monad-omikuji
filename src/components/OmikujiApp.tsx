@@ -8,6 +8,7 @@ import { useAccount } from "wagmi";
 import { Providers } from "@/src/components/Providers";
 import { runtimeMode, shortAddress } from "@/src/lib/runtime";
 import { defaultProfile, storage } from "@/src/lib/storage";
+import { loadCloudAccount, supabase, updateCloudFavorite } from "@/src/lib/supabase";
 import type { AppRoute, DemoProfile, DrawResult } from "@/src/types";
 import { HomeView } from "@/src/views/HomeView";
 import { DrawView } from "@/src/views/DrawView";
@@ -24,6 +25,9 @@ interface AppState {
   toggleFavorite: (id: string) => void;
   profile: DemoProfile;
   setProfile: (profile: DemoProfile) => void;
+  cloudSyncing: boolean;
+  lastCloudSync: string | null;
+  syncCloudHistory: () => Promise<number>;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -111,6 +115,37 @@ export function OmikujiApp() {
   const [history, setHistory] = useState<DrawResult[]>([]);
   const [lastResult, setLastResult] = useState<DrawResult | null>(null);
   const [profile, setProfileState] = useState<DemoProfile>(defaultProfile);
+  const [cloudSyncing, setCloudSyncing] = useState(false);
+  const [lastCloudSync, setLastCloudSync] = useState<string | null>(null);
+
+  const syncCloudHistory = useCallback(async () => {
+    if (!supabase) return 0;
+    setCloudSyncing(true);
+    try {
+      const account = await loadCloudAccount();
+      if (!account) return 0;
+      const nextProfile: DemoProfile = {
+        id: account.user.id,
+        username: account.profile?.username ?? account.user.user_metadata?.name ?? "御签守护者",
+        email: account.user.email ?? "",
+        avatar: account.profile?.avatar ?? "🌸",
+        signedIn: true,
+      };
+      setProfileState(nextProfile);
+      storage.saveProfile(nextProfile);
+      setHistory((current) => {
+        const cloudKeys = new Set(account.fortunes.map((item) => `${item.chainId}:${item.txHash.toLowerCase()}`));
+        const localOnly = current.filter((item) => !cloudKeys.has(`${item.chainId}:${item.txHash.toLowerCase()}`));
+        const merged = [...account.fortunes, ...localOnly].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        storage.saveHistory(merged);
+        return merged;
+      });
+      setLastCloudSync(new Date().toISOString());
+      return account.fortunes.length;
+    } finally {
+      setCloudSyncing(false);
+    }
+  }, []);
 
   useEffect(() => {
     setRoute(routeFromPath(window.location.pathname));
@@ -121,6 +156,20 @@ export function OmikujiApp() {
     window.addEventListener("popstate", handlePop);
     return () => window.removeEventListener("popstate", handlePop);
   }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    void syncCloudHistory().catch(() => undefined);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) window.setTimeout(() => void syncCloudHistory().catch(() => undefined), 0);
+      else {
+        setProfileState(defaultProfile);
+        storage.saveProfile(defaultProfile);
+        setLastCloudSync(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [syncCloudHistory]);
 
   const navigate = useCallback((next: AppRoute) => {
     const path = next === "home" ? "/" : `/${next}`;
@@ -141,10 +190,13 @@ export function OmikujiApp() {
 
   const toggleFavorite = useCallback((id: string) => {
     setHistory((current) => {
-      const next = current.map((item) => item.id === id ? { ...item, favorite: !item.favorite } : item);
+      const target = current.find((item) => item.id === id);
+      const favorite = !(target?.favorite ?? false);
+      const next = current.map((item) => item.id === id ? { ...item, favorite } : item);
       storage.saveHistory(next);
+      if (target?.mode === "live" && target.claimed) void updateCloudFavorite(id, favorite).catch(() => undefined);
       if (lastResult?.id === id) {
-        const updated = { ...lastResult, favorite: !lastResult.favorite };
+        const updated = { ...lastResult, favorite };
         setLastResult(updated);
         storage.saveLastResult(updated);
       }
@@ -153,7 +205,7 @@ export function OmikujiApp() {
   }, [lastResult]);
 
   const setProfile = useCallback((next: DemoProfile) => { setProfileState(next); storage.saveProfile(next); }, []);
-  const value = useMemo(() => ({ route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile }), [route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile]);
+  const value = useMemo(() => ({ route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory }), [route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory]);
 
   return <Providers><AppContext.Provider value={value}><Shell /></AppContext.Provider></Providers>;
 }

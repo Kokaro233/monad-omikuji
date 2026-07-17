@@ -9,7 +9,7 @@ import { runtime, shortAddress } from "@/src/lib/runtime";
 import type { Rarity } from "@/src/types";
 
 export function CollectionView() {
-  const { history, toggleFavorite, profile, navigate } = useOmikuji();
+  const { history, toggleFavorite, profile, navigate, cloudSyncing, lastCloudSync, syncCloudHistory } = useOmikuji();
   const { address } = useAccount();
   const [filter, setFilter] = useState<"ALL" | Rarity | "FAVORITES">("ALL");
   const [query, setQuery] = useState("");
@@ -27,6 +27,7 @@ export function CollectionView() {
         <aside className="profile-sidebar">
           <div className="avatar-medallion"><img src="/assets/maiden-happy.png" alt="Profile avatar"/></div><h2>{profile.username}</h2><p><Wallet size={14}/>{shortAddress(address ?? history[0]?.walletAddress)}</p>
           <div className="collection-stats"><div><strong>{history.length}</strong><span>御签</span></div><div><strong>{history.filter((item) => getFortune(item.fortuneId).rarity === "SSR").length}</strong><span>SSR</span></div><div><strong>{history.filter((item) => item.favorite).length}</strong><span>珍藏</span></div></div>
+          {profile.signedIn && <button className="collection-sync-button" disabled={cloudSyncing} onClick={() => void syncCloudHistory()}>{cloudSyncing ? "正在同步云端…" : lastCloudSync ? "✓ 已连接云端 · 点击刷新" : "同步云端御签"}</button>}
           <nav className="filter-list">{(["ALL", "SSR", "SR", "R", "FAVORITES"] as const).map((item) => <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item === "ALL" ? "✦ 全部御签" : item === "FAVORITES" ? "♥ 我的珍藏" : `✧ ${item}`}</button>)}</nav>
         </aside>
         <section className="collection-content">

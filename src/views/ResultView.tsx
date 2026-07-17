@@ -16,14 +16,42 @@ export function ResultView() {
   if (!lastResult && !isSharedView) return <div className="empty-state"><span>?</span><h1>还没有揭晓御签</h1><p>走进神社，让命运为你选择一条道路。</p><button className="primary-button" onClick={() => navigate("draw")}>前往抽签</button></div>;
   const fortune = getFortune(sharedFortuneId ?? lastResult!.fortuneId);
 
+  async function copyShareText(value: string) {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return;
+      } catch { /* Safari and embedded desktop browsers may deny this API */ }
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    if (!copied) throw new Error("clipboard unavailable");
+  }
+
   async function share() {
     const text = `我的 Monad 御神签是「${fortune.kanji} · ${fortune.nameZh}」！`;
     const shareUrl = buildFortuneShareUrl(window.location.origin, fortune.id);
+    const shareText = `${text} ${shareUrl}`;
+    const useNativeShare = Boolean(navigator.share) && window.matchMedia("(pointer: coarse)").matches;
     try {
-      if (navigator.share) await navigator.share({ title: "Monad Omikuji", text, url: shareUrl });
-      else await navigator.clipboard.writeText(`${text} ${shareUrl}`);
+      if (useNativeShare) await navigator.share({ title: "Monad Omikuji", text, url: shareUrl });
+      else await copyShareText(shareText);
       setShared(true);
-    } catch { /* share cancelled */ }
+    } catch {
+      try {
+        await copyShareText(shareText);
+        setShared(true);
+      } catch { /* clipboard permission denied */ }
+    }
   }
 
   return (
@@ -48,9 +76,11 @@ export function ResultView() {
           </motion.article>
         </div>
         <div className="result-actions">
-          <button className="red-button" onClick={share}><Share2 size={17}/>{shared ? "已复制" : "分享御签"}</button>
-          <button className="purple-button" onClick={() => navigate("draw")}><RotateCcw size={17}/> {isSharedView ? "我也求一签" : "再求一签"}</button>
-          {!isSharedView && lastResult && <button className={`favorite-button ${lastResult.favorite ? "active" : ""}`} aria-label="Favorite this fortune" onClick={() => toggleFavorite(lastResult.id)}><Heart size={19} fill={lastResult.favorite ? "currentColor" : "none"}/></button>}
+          {isSharedView ? <button className="purple-button" onClick={() => navigate("draw")}><RotateCcw size={17}/> 我也求一签</button> : <>
+            <button className="red-button" onClick={share}><Share2 size={17}/>{shared ? "已复制" : "分享御签"}</button>
+            <button className="purple-button" onClick={() => navigate("draw")}><RotateCcw size={17}/> 再求一签</button>
+            {lastResult && <button className={`favorite-button ${lastResult.favorite ? "active" : ""}`} aria-label="Favorite this fortune" onClick={() => toggleFavorite(lastResult.id)}><Heart size={19} fill={lastResult.favorite ? "currentColor" : "none"}/></button>}
+          </>}
         </div>
       </section>
 

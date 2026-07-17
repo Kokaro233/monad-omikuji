@@ -8,7 +8,7 @@ import { requestEmailCode, signInWithGoogle, supabase, verifyEmailCode } from "@
 import { runtime, runtimeMode, shortAddress } from "@/src/lib/runtime";
 
 export function ProfileView() {
-  const { profile, setProfile, history } = useOmikuji();
+  const { profile, setProfile, history, cloudSyncing, lastCloudSync, syncCloudHistory } = useOmikuji();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const [email, setEmail] = useState(profile.email);
@@ -46,9 +46,10 @@ export function ProfileView() {
     try {
       const result = await verifyEmailCode(email, emailCode);
       setProfile({ ...profile, email, username: username || "御签守护者", signedIn: true, id: result.user?.id ?? "demo-user" });
+      const synced = await syncCloudHistory();
       setCodeSent(false);
       setEmailCode("");
-      setNotice("登录成功，欢迎回到月下神社。 ");
+      setNotice(`登录成功，已从云端同步 ${synced} 份链上御签。`);
     } catch (error) { setNotice(error instanceof Error ? error.message : "验证码无效或已过期。 "); }
     setBusy(false);
   }
@@ -68,7 +69,8 @@ export function ProfileView() {
         const pending = history.filter((item) => !item.claimed).map((item) => item.txHash);
         const verifyResponse = await fetch(`${runtime.supabaseUrl}/functions/v1/wallet-claim/verify`, { method: "POST", headers: { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ address, chainId: 10143, nonce, signature, txHashes: pending }) });
         if (!verifyResponse.ok) throw new Error("钱包验证失败。 ");
-        setNotice("钱包验证成功，符合条件的御签已完成认领。 ");
+        const synced = await syncCloudHistory();
+        setNotice(`钱包验证成功，已同步 ${synced} 份链上御签。`);
       }
     } catch (error) { setNotice(error instanceof Error ? error.message.split("\n")[0] : "未能完成签名。 "); }
     setBusy(false);
@@ -81,7 +83,7 @@ export function ProfileView() {
         <Frame><div className="account-panel"><h2><LogIn/> 神社账户</h2><label>显示名称<input value={username} onChange={(event) => setUsername(event.target.value)} /></label><label>邮箱地址<div className="input-icon"><Mail/><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); setCodeSent(false); }} placeholder="you@example.com" /></div></label>{codeSent && <label>邮箱验证码<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="请输入 6 位验证码" /></label>}<button className="primary-button compact" onClick={profile.signedIn ? () => setProfile({ ...profile, email, username }) : codeSent ? confirmCode : requestCode} disabled={busy}>{profile.signedIn ? "保存个人资料" : codeSent ? "验证并登录" : "获取邮箱验证码"}</button>{codeSent && <button className="google-button" onClick={requestCode} disabled={busy}>重新发送验证码</button>}{runtime.googleAuth && <button className="google-button" onClick={signInWithGoogle}>使用 Google 继续</button>}</div></Frame>
         <Frame><div className="account-panel"><h2><WalletCards/> 已连接钱包</h2><div className="wallet-record"><span className={isConnected ? "online" : ""}/><div><strong>{isConnected ? shortAddress(address) : "尚未连接钱包"}</strong><small>{isConnected ? "Monad 测试网 · 当前钱包" : "请使用页面顶部的连接钱包按钮"}</small></div></div><button className="purple-button full" onClick={claimWallet} disabled={!isConnected || busy}><ShieldCheck/> 签名并认领钱包</button><p className="security-note"><ShieldCheck/> 一次性签名只用于证明钱包归属，绝不会授予资产支出权限。</p></div></Frame>
       </div>
-      <div className="claim-summary"><Sparkles/><div><strong>已认领 {history.filter((item) => item.claimed).length} 份祝福</strong><span>{history.filter((item) => !item.claimed).length} 份御签等待认领</span></div>{profile.signedIn && <CheckCircle2 className="success"/>}</div>
+      <div className="claim-summary"><Sparkles/><div><strong>云端已同步 {history.filter((item) => item.mode === "live" && item.claimed).length} 份链上御签</strong><span>{history.filter((item) => item.mode === "demo").length} 份访客体验签仅保存在本设备 · {lastCloudSync ? `最近同步 ${new Date(lastCloudSync).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}` : "登录后可跨设备同步"}</span></div>{profile.signedIn ? <button className="sync-cloud-button" disabled={cloudSyncing} onClick={async () => { try { const count = await syncCloudHistory(); setNotice(`云端同步完成，共 ${count} 份链上御签。`); } catch { setNotice("云端同步失败，请稍后重试。"); } }}>{cloudSyncing ? "同步中…" : "立即同步"}</button> : <CheckCircle2 className="success"/>}</div>
       <div className="profile-footer-blessing" aria-hidden="true">
         <img src="/assets/maiden-praying.png" alt="" />
         <div><span>✦ 月下结缘 ✦</span><p>愿每一次连接，都通往一份好消息。</p></div>

@@ -5,8 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, LoaderCircle, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { decodeEventLog } from "viem";
-import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient, useWriteContract } from "wagmi";
 import { useOmikuji } from "@/src/components/OmikujiApp";
+import { monadTestnet } from "@/src/config/chain";
 import { fortuneContractAbi } from "@/src/config/contract";
 import { drawWeightedFortune } from "@/src/lib/fortunes";
 import { runtime, runtimeMode } from "@/src/lib/runtime";
@@ -26,12 +27,29 @@ const dialogue: Record<DrawPhase, string> = {
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const MONAD_CHAIN_HEX = "0x279f";
+
+function walletErrorCode(cause: unknown): number | undefined {
+  if (!cause || typeof cause !== "object") return undefined;
+  const value = cause as { code?: number; cause?: { code?: number } };
+  return value.code ?? value.cause?.code;
+}
+
+function friendlyWalletError(cause: unknown) {
+  const code = walletErrorCode(cause);
+  const message = cause instanceof Error ? cause.message.toLowerCase() : "";
+  if (code === 4001 || message.includes("user rejected") || message.includes("user denied")) return "你取消了钱包操作。请在钱包中确认切换到 Monad Testnet 后再试。";
+  if (message.includes("insufficient funds")) return "钱包中的 Monad 测试币不足，领取测试币后再来求签吧。";
+  if (message.includes("already drawn") || message.includes("daily")) return "这个钱包今天的十次链上求签机会已经用完，请在 UTC 00:00 后再来。";
+  if (message.includes("chain") || message.includes("network") || code === 4902) return "钱包尚未切换到 Monad Testnet。请允许网站添加并切换网络（链 ID 10143），然后再试一次。";
+  return "钱包没有完成本次交易，请确认网络与测试币余额后再试。";
+}
 
 export function DrawView() {
   const { navigate, addResult } = useOmikuji();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { switchChainAsync } = useSwitchChain();
+  const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
   const [phase, setPhase] = useState<DrawPhase>("ready");
   const [error, setError] = useState("");
@@ -44,6 +62,26 @@ export function DrawView() {
   const completedRef = useRef(false);
 
   useEffect(() => { setGuestTrials(storage.getGuestTrialCount()); }, []);
+
+  async function ensureMonadNetwork() {
+    if (!walletClient) throw new Error("钱包连接尚未准备好");
+    if (await walletClient.getChainId() === monadTestnet.id) return;
+    try {
+      await walletClient.request({ method: "wallet_switchEthereumChain", params: [{ chainId: MONAD_CHAIN_HEX }] });
+    } catch (switchError) {
+      if (walletErrorCode(switchError) === 4001) throw switchError;
+      await walletClient.request({
+        method: "wallet_addEthereumChain",
+        params: [{ chainId: MONAD_CHAIN_HEX, chainName: monadTestnet.name, nativeCurrency: monadTestnet.nativeCurrency, rpcUrls: [runtime.rpcUrl], blockExplorerUrls: [runtime.explorerUrl] }],
+      });
+      await walletClient.request({ method: "wallet_switchEthereumChain", params: [{ chainId: MONAD_CHAIN_HEX }] });
+    }
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      if (await walletClient.getChainId() === monadTestnet.id) return;
+      await delay(250);
+    }
+    throw new Error("wallet network switch did not finish");
+  }
 
   const character = phase === "ready" || phase === "error" ? "/assets/maiden-idle.png" : phase === "revealed" ? "/assets/maiden-happy.png" : "/assets/maiden-praying.png";
 
@@ -87,7 +125,7 @@ export function DrawView() {
     completedRef.current = false;
     const guestTrial = runtimeMode === "live" && !isConnected;
     if (guestTrial && guestTrials >= GUEST_TRIAL_LIMIT) {
-      setError("三次访客体验已经用完，请连接钱包后继续求取链上御神签。 ");
+      setError("五次访客体验已经用完，请连接钱包后继续求取链上御神签。 ");
       setPhase("error");
       return;
     }
@@ -108,13 +146,13 @@ export function DrawView() {
         await completeResult(fortune.id, hash, undefined, guestTrial);
         return;
       }
-      if (chainId !== 10143) await switchChainAsync({ chainId: 10143 });
+      if (chainId !== 10143) await ensureMonadNetwork();
       setPhase("wallet");
       const hash = await writeContractAsync({ address: runtime.contractAddress, abi: fortuneContractAbi, functionName: "drawFortune", chainId: 10143 });
       setTxHash(hash);
       setPhase("confirming");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message.split("\n")[0] : "本次仪式未能完成。 ");
+      setError(friendlyWalletError(cause));
       setPhase("error");
     }
   }
