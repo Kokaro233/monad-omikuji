@@ -67,7 +67,7 @@ function Shell() {
       <div className="vignette" aria-hidden="true" />
       <header className="topbar">
         <button className="brand" onClick={() => navigate("home")} aria-label="Monad Omikuji home">
-          <span className="brand__flower">✿</span><span>MONAD OMIKUJI</span>
+          <span className="brand__monad" aria-hidden="true"/><span>MONAD OMIKUJI</span>
         </button>
         <nav className={`desktop-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
           {routes.map(({ key, label }) => <button key={key} className={route === key ? "active" : ""} onClick={() => { navigate(key); setMenuOpen(false); }}>{label}</button>)}
