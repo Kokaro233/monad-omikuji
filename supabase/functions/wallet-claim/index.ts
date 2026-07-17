@@ -8,6 +8,31 @@ const catalog = [
   ["Great Blessing", "SSR", "Great things are coming your way."], ["Rising Fortune", "SR", "A patient heart opens the gate."], ["Gentle Blessing", "SR", "Small joys gather into light."], ["Good Fortune", "R", "A kind encounter awaits."], ["Future Fortune", "R", "Your season will come."], ["Caution", "R", "Move gently today."], ["Great Caution", "R", "Even the darkest night passes."],
 ] as const;
 
+async function claimTransactions(supabase: any, userId: string, wallet: { id: string }, address: string, chainId: number, txHashes: string[]) {
+  const client = createPublicClient({ transport: http(Deno.env.get("MONAD_RPC_URL")!) });
+  const contractAddress = Deno.env.get("CONTRACT_ADDRESS")!.toLowerCase();
+  const claimed = [];
+  for (const txHash of txHashes.slice(0, 20)) {
+    if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) continue;
+    const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
+    if (receipt.status !== "success") continue;
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== contractAddress) continue;
+      try {
+        const decoded = decodeEventLog({ abi: contractAbi, data: log.data, topics: log.topics });
+        if (decoded.eventName !== "FortuneDrawn" || decoded.args.user.toLowerCase() !== address) continue;
+        const fortuneId = Number(decoded.args.fortuneId);
+        const definition = catalog[fortuneId];
+        if (!definition) continue;
+        const record = { user_id: userId, wallet_id: wallet.id, fortune_id: fortuneId, fortune_type: definition[0], rarity: definition[1], message: definition[2], tx_hash: txHash.toLowerCase(), log_index: log.logIndex, block_number: receipt.blockNumber.toString(), chain_id: chainId, created_at: new Date(Number(decoded.args.timestamp) * 1000).toISOString() };
+        const { error } = await supabase.from("fortunes").upsert(record, { onConflict: "chain_id,tx_hash,log_index", ignoreDuplicates: true });
+        if (!error) claimed.push(record);
+      } catch { /* unrelated log */ }
+    }
+  }
+  return claimed;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -21,6 +46,14 @@ Deno.serve(async (request) => {
     const chainId = Number(body.chainId ?? 10143);
     if (!/^0x[0-9a-f]{40}$/.test(address) || chainId !== 10143) return json({ error: "Invalid wallet or chain" }, 400);
     const action = new URL(request.url).pathname.split("/").pop();
+
+    if (action === "sync") {
+      const { data: wallet, error: walletError } = await supabase.from("wallets").select("id,user_id").eq("user_id", user.id).eq("chain_id", chainId).eq("wallet_address", address).maybeSingle();
+      if (walletError) throw walletError;
+      if (!wallet) return json({ error: "Wallet must be bound once before automatic sync", code: "wallet_binding_required" }, 403);
+      const claimed = await claimTransactions(supabase, user.id, wallet, address, chainId, body.txHashes ?? []);
+      return json({ wallet, claimed });
+    }
 
     if (action === "nonce") {
       const nonce = crypto.randomUUID();
@@ -41,26 +74,7 @@ Deno.serve(async (request) => {
     const { data: wallet, error: walletError } = await supabase.from("wallets").upsert({ user_id: user.id, wallet_address: address, chain_id: chainId }, { onConflict: "chain_id,wallet_address" }).select().single();
     if (walletError) throw walletError;
 
-    const client = createPublicClient({ transport: http(Deno.env.get("MONAD_RPC_URL")!) });
-    const contractAddress = Deno.env.get("CONTRACT_ADDRESS")!.toLowerCase();
-    const claimed = [];
-    for (const txHash of (body.txHashes ?? []).slice(0, 20)) {
-      const receipt = await client.getTransactionReceipt({ hash: txHash });
-      if (receipt.status !== "success") continue;
-      for (const log of receipt.logs) {
-        if (log.address.toLowerCase() !== contractAddress) continue;
-        try {
-          const decoded = decodeEventLog({ abi: contractAbi, data: log.data, topics: log.topics });
-          if (decoded.eventName !== "FortuneDrawn" || decoded.args.user.toLowerCase() !== address) continue;
-          const fortuneId = Number(decoded.args.fortuneId);
-          const definition = catalog[fortuneId];
-          if (!definition) continue;
-          const record = { user_id: user.id, wallet_id: wallet.id, fortune_id: fortuneId, fortune_type: definition[0], rarity: definition[1], message: definition[2], tx_hash: txHash.toLowerCase(), log_index: log.logIndex, block_number: receipt.blockNumber.toString(), chain_id: chainId, created_at: new Date(Number(decoded.args.timestamp) * 1000).toISOString() };
-          const { error } = await supabase.from("fortunes").upsert(record, { onConflict: "chain_id,tx_hash,log_index", ignoreDuplicates: true });
-          if (!error) claimed.push(record);
-        } catch { /* unrelated log */ }
-      }
-    }
+    const claimed = await claimTransactions(supabase, user.id, wallet, address, chainId, body.txHashes ?? []);
     await supabase.from("wallet_nonces").update({ used_at: new Date().toISOString() }).eq("id", nonceRow.id);
     return json({ wallet, claimed });
   } catch (error) {

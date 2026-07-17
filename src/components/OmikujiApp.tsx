@@ -8,7 +8,7 @@ import { useAccount } from "wagmi";
 import { Providers } from "@/src/components/Providers";
 import { runtimeMode, shortAddress } from "@/src/lib/runtime";
 import { defaultProfile, storage } from "@/src/lib/storage";
-import { loadCloudAccount, supabase, updateCloudFavorite } from "@/src/lib/supabase";
+import { loadCloudAccount, supabase, syncBoundWalletFortunes, syncGuestFortunes, updateCloudFavorite, updateCloudGuestFavorite } from "@/src/lib/supabase";
 import type { AppRoute, DemoProfile, DrawResult } from "@/src/types";
 import { HomeView } from "@/src/views/HomeView";
 import { DrawView } from "@/src/views/DrawView";
@@ -61,9 +61,19 @@ const routes: { key: AppRoute; label: string; icon: typeof House }[] = [
 ];
 
 function Shell() {
-  const { route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile } = useOmikuji();
+  const { route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, syncCloudHistory } = useOmikuji();
   const { address, isConnected, chain } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!profile.signedIn || !isConnected || !address || runtimeMode !== "live") return;
+    const pending = history.filter((item) => item.mode === "live" && !item.claimed && item.walletAddress.toLowerCase() === address.toLowerCase()).map((item) => item.txHash);
+    if (!pending.length) return;
+    void syncBoundWalletFortunes(address, pending).then((result) => {
+      if (!result.bindingRequired) return syncCloudHistory();
+      return 0;
+    }).catch(() => undefined);
+  }, [address, history, isConnected, profile.signedIn, syncCloudHistory]);
 
   return (
     <main className={`game-shell route-${route}`}>
@@ -122,6 +132,7 @@ export function OmikujiApp() {
     if (!supabase) return 0;
     setCloudSyncing(true);
     try {
+      await syncGuestFortunes(storage.getHistory().filter((item) => item.mode === "demo"));
       const account = await loadCloudAccount();
       if (!account) return 0;
       const nextProfile: DemoProfile = {
@@ -195,6 +206,7 @@ export function OmikujiApp() {
       const next = current.map((item) => item.id === id ? { ...item, favorite } : item);
       storage.saveHistory(next);
       if (target?.mode === "live" && target.claimed) void updateCloudFavorite(id, favorite).catch(() => undefined);
+      if (target?.mode === "demo" && profile.signedIn) void updateCloudGuestFavorite(id, favorite).catch(() => undefined);
       if (lastResult?.id === id) {
         const updated = { ...lastResult, favorite };
         setLastResult(updated);
@@ -202,7 +214,7 @@ export function OmikujiApp() {
       }
       return next;
     });
-  }, [lastResult]);
+  }, [lastResult, profile.signedIn]);
 
   const setProfile = useCallback((next: DemoProfile) => { setProfileState(next); storage.saveProfile(next); }, []);
   const value = useMemo(() => ({ route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory }), [route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory]);
