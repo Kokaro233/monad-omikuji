@@ -2,7 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, CircleUserRound, House, Menu, Sparkles, WalletCards, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, CircleUserRound, House, Menu, Sparkles, WalletCards, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAccount } from "wagmi";
 import { Providers } from "@/src/components/Providers";
@@ -64,6 +64,7 @@ function Shell() {
   const { route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, syncCloudHistory } = useOmikuji();
   const { address, isConnected, chain } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavCollapsed, setMobileNavCollapsed] = useState(false);
 
   useEffect(() => {
     if (!profile.signedIn || !isConnected || !address || runtimeMode !== "live") return;
@@ -113,7 +114,8 @@ function Shell() {
         {isConnected ? `${shortAddress(address)} · ${chain?.name ?? "Monad"}` : "钱包未连接"}
       </div>
 
-      <nav className="mobile-nav" aria-label="Mobile navigation">
+      <nav className={`mobile-nav ${mobileNavCollapsed ? "is-collapsed" : ""}`} aria-label="Mobile navigation">
+        <button className="mobile-nav-toggle" aria-label={mobileNavCollapsed ? "展开底部菜单" : "收起底部菜单"} aria-expanded={!mobileNavCollapsed} onClick={() => setMobileNavCollapsed((value) => !value)}>{mobileNavCollapsed ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}</button>
         {routes.map(({ key, label, icon: Icon }) => <button key={key} className={route === key ? "active" : ""} onClick={() => navigate(key)}><Icon size={20}/><span>{label}</span></button>)}
       </nav>
     </main>
