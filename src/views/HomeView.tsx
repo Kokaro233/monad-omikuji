@@ -10,6 +10,7 @@ import { supabase } from "@/src/lib/supabase";
 export function HomeView() {
   const { navigate } = useOmikuji();
   const [onchainDrawCount, setOnchainDrawCount] = useState<number | null>(null);
+  const [guestDrawCount, setGuestDrawCount] = useState<number | null>(null);
   const [countUnavailable, setCountUnavailable] = useState(false);
 
   useEffect(() => {
@@ -18,9 +19,15 @@ export function HomeView() {
     let cancelled = false;
     async function readVerifiedCount() {
       try {
-        const { data, error } = await client.rpc("get_verified_fortune_count");
-        if (error) throw error;
-        if (!cancelled) setOnchainDrawCount(Number(data ?? 0));
+        const [verifiedResponse, guestResponse] = await Promise.all([
+          client.rpc("get_verified_fortune_count"),
+          client.rpc("get_guest_fortune_count"),
+        ]);
+        if (verifiedResponse.error) throw verifiedResponse.error;
+        if (!cancelled) {
+          setOnchainDrawCount(Number(verifiedResponse.data ?? 0));
+          setGuestDrawCount(guestResponse.error ? null : Number(guestResponse.data ?? 0));
+        }
       } catch {
         if (!cancelled) setCountUnavailable(true);
       }
@@ -51,7 +58,12 @@ export function HomeView() {
             <li><b>4</b><span>收藏并分享祝福</span></li>
           </ol>
         </Frame>
-        <div className="fortune-count"><span>✦ 已验证御签总数</span><strong>{onchainDrawCount === null ? "—" : onchainDrawCount.toLocaleString()} <i>✿</i></strong><small>{countLabel}</small></div>
+        <div className="fortune-count">
+          <span>✦ 已验证御签总数</span>
+          <strong>{onchainDrawCount === null ? "—" : onchainDrawCount.toLocaleString()} <i>✿</i></strong>
+          <small>{countLabel}</small>
+          {guestDrawCount !== null && guestDrawCount > 0 && <em>另有 {guestDrawCount.toLocaleString()} 份访客祈愿由账号珍藏</em>}
+        </div>
       </aside>
 
       <section className="maiden-stage">

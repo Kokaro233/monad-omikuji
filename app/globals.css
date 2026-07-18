@@ -76,7 +76,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .steps b { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: #a83226; border: 1px solid #ffc65e; color: white; }
 .fortune-count, .daily-blessing { text-align: center; background: rgba(28,12,18,.93); border: 2px solid var(--gold-deep); box-shadow: inset 0 0 0 2px #140810, var(--shadow); padding: 10px; }
 .fortune-count span, .daily-blessing span { color: #ffce78; font-size: 12px; }
-.fortune-count strong { display: block; color: #ffe194; font-size: 29px; margin: 4px 0; }.fortune-count strong i { color: var(--rose); font-style: normal; }.fortune-count small { color: #bca486; }
+.fortune-count strong { display: block; color: #ffe194; font-size: 29px; margin: 4px 0; }.fortune-count strong i { color: var(--rose); font-style: normal; }.fortune-count small,.fortune-count em { display:block;color:#bca486; }.fortune-count em{margin-top:4px;color:#d9a3bd;font-size:10px;font-style:normal;letter-spacing:.03em}
 .maiden-stage { min-height: 76vh; position: relative; display: flex; justify-content: center; align-items: flex-end; }
 .maiden { object-fit: contain; pointer-events: none; user-select: none; filter: drop-shadow(0 10px 12px rgba(14,2,25,.68)); }
 .maiden-character{position:relative;display:flex;justify-content:center;align-items:flex-end}.home-character{width:min(39vw,530px);height:76vh}.maiden-idle { width: 100%; height: 100%; object-position: center bottom; }
