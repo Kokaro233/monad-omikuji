@@ -2,11 +2,12 @@
 pragma solidity ^0.8.28;
 
 /// @title Monad Omikuji
-/// @notice Records one pseudo-random shrine fortune per wallet per UTC day.
+/// @notice Records pseudo-random shrine fortunes per wallet per UTC+8 calendar day.
 /// @dev Demo randomness is not safe for valuable outcomes. A production release
 ///      should use a verifiable randomness provider such as Chainlink VRF.
 contract FortuneContract {
     uint256 public constant MAX_DAILY_DRAWS = 10;
+    uint256 private constant LOCAL_DAY_OFFSET = 8 hours;
     struct FortuneRecord {
         address wallet;
         uint256 fortuneId;
@@ -22,9 +23,9 @@ contract FortuneContract {
     error DailyLimitReached(uint256 nextDrawTimestamp);
 
     function drawFortune() external returns (uint256 fortuneId) {
-        uint256 currentDay = block.timestamp / 1 days;
+        uint256 currentDay = _localDay(block.timestamp);
         if (drawsPerDay[msg.sender][currentDay] >= MAX_DAILY_DRAWS) {
-            revert DailyLimitReached((currentDay + 1) * 1 days);
+            revert DailyLimitReached(_localDayStartTimestamp(currentDay + 1));
         }
 
         uint256 roll = uint256(
@@ -46,7 +47,7 @@ contract FortuneContract {
     }
 
     function canDraw(address user) external view returns (bool) {
-        return drawsPerDay[user][block.timestamp / 1 days] < MAX_DAILY_DRAWS;
+        return drawsPerDay[user][_localDay(block.timestamp)] < MAX_DAILY_DRAWS;
     }
 
     function getLatestFortune(address user) external view returns (FortuneRecord memory) {
@@ -66,6 +67,18 @@ contract FortuneContract {
     function previewFortuneForRoll(uint256 roll) external pure returns (uint256) {
         require(roll < 100, "Roll out of range");
         return _fortuneForRoll(roll);
+    }
+
+    function currentLocalDay() external view returns (uint256) {
+        return _localDay(block.timestamp);
+    }
+
+    function _localDay(uint256 timestamp) private pure returns (uint256) {
+        return (timestamp + LOCAL_DAY_OFFSET) / 1 days;
+    }
+
+    function _localDayStartTimestamp(uint256 localDay) private pure returns (uint256) {
+        return (localDay * 1 days) - LOCAL_DAY_OFFSET;
     }
 
     function _fortuneForRoll(uint256 roll) private pure returns (uint256) {

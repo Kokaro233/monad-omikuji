@@ -76,7 +76,7 @@ export function HomeView() {
         </motion.div>
         <motion.img src="/assets/fortune-box.png" alt="Omikuji fortune box" className="home-fortune-box" animate={{ y: [0, -3, 0] }} transition={{ duration: 2.2, repeat: Infinity }} />
         <button className="primary-button hero-cta" onClick={() => navigate("draw")}><span>✦</span> 求取御神签 <span>✦</span></button>
-        <p className="once-note">每个钱包每日可求十签 · 以 UTC 日期为准</p>
+        <p className="once-note">每个钱包每日可求十签 · 每日 00:00 刷新</p>
       </section>
 
       <aside className="home-right">

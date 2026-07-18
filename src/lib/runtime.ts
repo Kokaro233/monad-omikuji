@@ -1,8 +1,11 @@
 import type { RuntimeMode } from "@/src/types";
 
 const env = import.meta.env;
-const currentContractAddress = "0x4be10ce76e9698978afa2414a2b65b8ed771823b";
-const retiredContractAddresses = new Set(["0x3b31775c81d0da5ca59574d29c1bf86a6fda4993"]);
+const currentContractAddress = "0x02f76e26db659657b7543898f428917a2a50caea";
+const retiredContractAddresses = new Set([
+  "0x3b31775c81d0da5ca59574d29c1bf86a6fda4993",
+  "0x4be10ce76e9698978afa2414a2b65b8ed771823b",
+]);
 const configuredContractAddress = (env.VITE_CONTRACT_ADDRESS ?? "").toLowerCase();
 
 export const runtime = {

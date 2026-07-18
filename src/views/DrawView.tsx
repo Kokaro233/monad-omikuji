@@ -51,8 +51,16 @@ function findHexErrorData(cause: unknown, seen = new Set<unknown>()): Hex | unde
   return undefined;
 }
 
-function formatUtcTimestamp(seconds: bigint) {
-  return new Date(Number(seconds) * 1000).toISOString().replace(".000Z", " UTC");
+function formatLocalResetTimestamp(seconds: bigint) {
+  return `${new Date(Number(seconds) * 1000).toLocaleString("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })}（UTC+8）`;
 }
 
 function decodeContractError(cause: unknown) {
@@ -62,7 +70,7 @@ function decodeContractError(cause: unknown) {
     const decoded = decodeErrorResult({ abi: fortuneContractAbi, data });
     if (decoded.errorName === "DailyLimitReached") {
       const [nextDrawTimestamp] = decoded.args;
-      return `链上返回 DailyLimitReached：这个钱包今天的正式求签次数已经用完，请在 ${formatUtcTimestamp(nextDrawTimestamp)} 后再来。`;
+      return `链上返回 DailyLimitReached：这个钱包今天的正式求签次数已经用完，请在 ${formatLocalResetTimestamp(nextDrawTimestamp)} 后再来。`;
     }
     return `链上返回 ${decoded.errorName}，本次交易已在提交前停止。`;
   } catch {
@@ -77,7 +85,7 @@ function friendlyWalletError(cause: unknown) {
   const message = cause instanceof Error ? cause.message.toLowerCase() : "";
   if (code === 4001 || message.includes("user rejected") || message.includes("user denied")) return "你取消了钱包操作。请在钱包中确认切换到 Monad Testnet 后再试。";
   if (message.includes("insufficient funds")) return "钱包中的 Monad 测试币不足，领取测试币后再来求签吧。";
-  if (message.includes("already drawn") || message.includes("daily")) return "这个钱包今天的十次链上求签机会已经用完，请在 UTC 00:00 后再来。";
+  if (message.includes("already drawn") || message.includes("daily")) return "这个钱包今天的十次链上求签机会已经用完，请在每日 00:00 后再来。";
   if (message.includes("chain") || message.includes("network") || code === 4902) return "钱包尚未切换到 Monad Testnet。请允许网站添加并切换网络（链 ID 10143），然后再试一次。";
   return "钱包没有完成本次交易，请确认网络与测试币余额后再试。";
 }
@@ -178,12 +186,12 @@ export function DrawView() {
     completedRef.current = false;
     const guestTrial = runtimeMode === "live" && !hasConnectedWallet;
     if (guestTrial && guestTrials >= GUEST_TRIAL_LIMIT) {
-      setError("今天五次访客体验已经用完，请连接钱包正式上链，或在 UTC 00:00 后再来。 ");
+      setError("今天五次访客体验已经用完，请连接钱包正式上链，或在每日 00:00 后再来。 ");
       setPhase("error");
       return;
     }
     if (runtimeMode === "demo" && !canDrawDemoToday(drawWalletAddress)) {
-      setError("这个钱包今天的十次签运已经全部用完。请在 UTC 00:00 后再来，或连接另一个钱包。 ");
+      setError("这个钱包今天的十次签运已经全部用完。请在每日 00:00 后再来，或连接另一个钱包。 ");
       setPhase("error");
       return;
     }

@@ -25,7 +25,7 @@ Monad Omikuji is an animated pixel-art Web3 fortune ritual for Monad Testnet. Vi
 - Seven outcomes: 大吉, 中吉, 小吉, 吉, 末吉, 凶 and 大凶.
 - SSR / SR / R presentation with career, love and wealth ratings.
 - RPG-style collection, profile and wallet-claim experience.
-- Up to ten draws per wallet per UTC day, plus five device-local guest previews before wallet connection.
+- Up to ten draws per wallet per UTC+8 calendar day, plus five guest previews before wallet connection.
 
 ## Important Demo Notice
 
@@ -84,17 +84,17 @@ Never place a private key or a Supabase `service_role` key in a `VITE_` variable
 
 ## Smart Contract
 
-`FortuneContract` exposes `drawFortune`, `canDraw`, `getLatestFortune` and record-reading functions. It emits `FortuneDrawn` and enforces ten draws per wallet per UTC day.
+`FortuneContract` exposes `drawFortune`, `canDraw`, `getLatestFortune` and record-reading functions. It emits `FortuneDrawn` and enforces ten draws per wallet per UTC+8 calendar day.
 
 Current Monad Testnet deployment:
 
 ```text
-Contract: 0x4be10ce76e9698978afa2414a2b65b8ed771823b
-Transaction: 0xe8e6428b0ebfaa00df95b6469604495c02d492ebdd749deebe68e3eceac90f6c
-Block: 45911686
+Contract: 0x02f76e26db659657b7543898f428917a2a50caea
+Transaction: 0xf9f263104a1810ab2f1faa5d2e325554b305bd93d67b04289a4b499f306d626b
+Block: 46105299
 ```
 
-[View the deployed contract on Monad Explorer](https://testnet.monadexplorer.com/address/0x4be10ce76e9698978afa2414a2b65b8ed771823b)
+[View the deployed contract on Monad Explorer](https://testnet.monadexplorer.com/address/0x02f76e26db659657b7543898f428917a2a50caea)
 
 Create a local `.env` that is never committed:
 

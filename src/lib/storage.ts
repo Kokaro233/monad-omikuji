@@ -25,12 +25,12 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
-function utcDay() {
-  return new Date().toISOString().slice(0, 10);
+function localDrawDay(date = new Date()) {
+  return new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function readGuestTrials(): GuestTrialState {
-  const today = utcDay();
+  const today = localDrawDay();
   const value = read<GuestTrialState | number | null>(GUEST_TRIALS_KEY, null);
   if (!value || typeof value === "number" || value.date !== today) return { date: today, count: 0 };
   return { date: today, count: Math.min(GUEST_TRIAL_LIMIT, Math.max(0, Number(value.count) || 0)) };
@@ -53,14 +53,14 @@ export const storage = {
 };
 
 export function canDrawDemoToday(address: string) {
-  const today = utcDay();
+  const today = localDrawDay();
   return storage.getHistory().filter(
-    (item) => item.walletAddress.toLowerCase() === address.toLowerCase() && item.createdAt.slice(0, 10) === today,
+    (item) => item.walletAddress.toLowerCase() === address.toLowerCase() && localDrawDay(new Date(item.createdAt)) === today,
   ).length < DAILY_DRAW_LIMIT;
 }
 
 export function demoDrawsRemaining(address: string) {
-  const today = utcDay();
-  const used = storage.getHistory().filter((item) => item.walletAddress.toLowerCase() === address.toLowerCase() && item.createdAt.slice(0, 10) === today).length;
+  const today = localDrawDay();
+  const used = storage.getHistory().filter((item) => item.walletAddress.toLowerCase() === address.toLowerCase() && localDrawDay(new Date(item.createdAt)) === today).length;
   return Math.max(0, DAILY_DRAW_LIMIT - used);
 }

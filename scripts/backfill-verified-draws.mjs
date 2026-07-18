@@ -1,7 +1,7 @@
 import { createPublicClient, http, parseAbiItem } from "viem";
 
 const rpcUrl = process.env.MONAD_RPC_URL ?? process.env.VITE_MONAD_RPC_URL ?? "https://testnet-rpc.monad.xyz";
-const contractAddress = (process.env.CONTRACT_ADDRESS ?? process.env.VITE_CONTRACT_ADDRESS ?? "0x4be10ce76e9698978afa2414a2b65b8ed771823b").toLowerCase();
+const contractAddress = (process.env.CONTRACT_ADDRESS ?? process.env.VITE_CONTRACT_ADDRESS ?? "0x02f76e26db659657b7543898f428917a2a50caea").toLowerCase();
 const supabaseUrl = process.env.VITE_SUPABASE_URL ?? "https://bkxspvrkkaqtdetbeuet.supabase.co";
 const configuredFromBlock = process.env.FROM_BLOCK ? BigInt(process.env.FROM_BLOCK) : undefined;
 const lookbackBlocks = BigInt(process.env.LOOKBACK_BLOCKS ?? "5000");

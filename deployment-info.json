@@ -2,11 +2,11 @@
   "network": "Monad Testnet",
   "chainId": 10143,
   "contract": "FortuneContract",
-  "contractAddress": "0x4be10ce76e9698978afa2414a2b65b8ed771823b",
+  "contractAddress": "0x02f76e26db659657b7543898f428917a2a50caea",
   "deployer": "0x0Ec53965623c01C8C5a3af8F0d42Bb84cf7b837d",
-  "transactionHash": "0xe8e6428b0ebfaa00df95b6469604495c02d492ebdd749deebe68e3eceac90f6c",
-  "blockNumber": 45911686,
-  "gasUsed": 469056,
+  "transactionHash": "0xf9f263104a1810ab2f1faa5d2e325554b305bd93d67b04289a4b499f306d626b",
+  "blockNumber": 46105299,
+  "gasUsed": 485384,
   "dailyDrawLimit": 10,
-  "explorer": "https://testnet.monadexplorer.com/address/0x4be10ce76e9698978afa2414a2b65b8ed771823b"
+  "explorer": "https://testnet.monadexplorer.com/address/0x02f76e26db659657b7543898f428917a2a50caea"
 }
