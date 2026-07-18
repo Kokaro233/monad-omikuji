@@ -26,7 +26,18 @@ async function claimTransactions(supabase: any, userId: string, wallet: { id: st
         if (!definition) continue;
         const record = { user_id: userId, wallet_id: wallet.id, fortune_id: fortuneId, fortune_type: definition[0], rarity: definition[1], message: definition[2], tx_hash: txHash.toLowerCase(), log_index: log.logIndex, block_number: receipt.blockNumber.toString(), chain_id: chainId, created_at: new Date(Number(decoded.args.timestamp) * 1000).toISOString() };
         const { error } = await supabase.from("fortunes").upsert(record, { onConflict: "chain_id,tx_hash,log_index", ignoreDuplicates: true });
-        if (!error) claimed.push(record);
+        if (!error) {
+          await supabase.from("verified_fortune_draws").upsert({
+            wallet_address: address,
+            fortune_id: fortuneId,
+            tx_hash: txHash.toLowerCase(),
+            log_index: log.logIndex,
+            block_number: receipt.blockNumber.toString(),
+            chain_id: chainId,
+            created_at: new Date(Number(decoded.args.timestamp) * 1000).toISOString(),
+          }, { onConflict: "chain_id,tx_hash,log_index", ignoreDuplicates: true });
+          claimed.push(record);
+        }
       } catch { /* unrelated log */ }
     }
   }

@@ -164,3 +164,13 @@ export async function syncBoundWalletFortunes(address: string, txHashes: string[
   if (!response.ok) throw new Error(body.error ?? "Wallet sync failed");
   return { claimed: Array.isArray(body.claimed) ? body.claimed.length : 0, bindingRequired: false };
 }
+
+export async function recordPublicVerifiedDraw(txHash: string) {
+  if (!supabase || runtimeMode !== "live") return false;
+  const response = await fetch(`${runtime.supabaseUrl}/functions/v1/record-draw`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ txHash, chainId: 10143 }),
+  });
+  return response.ok;
+}

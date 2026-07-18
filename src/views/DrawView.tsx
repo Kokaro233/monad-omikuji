@@ -12,6 +12,7 @@ import { fortuneContractAbi } from "@/src/config/contract";
 import { drawWeightedFortune } from "@/src/lib/fortunes";
 import { runtime, runtimeMode } from "@/src/lib/runtime";
 import { canDrawDemoToday, GUEST_TRIAL_LIMIT, storage } from "@/src/lib/storage";
+import { recordPublicVerifiedDraw } from "@/src/lib/supabase";
 import type { DrawPhase, DrawResult } from "@/src/types";
 
 const dialogue: Record<DrawPhase, string> = {
@@ -166,6 +167,7 @@ export function DrawView() {
         if (decoded.eventName === "FortuneDrawn") fortuneId = Number(decoded.args.fortuneId);
       } catch { /* another contract log */ }
     }
+    void recordPublicVerifiedDraw(receipt.transactionHash).catch(() => undefined);
     void completeResult(fortuneId, receipt.transactionHash, receipt.blockNumber);
   }, [receipt]);
 

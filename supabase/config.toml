@@ -12,3 +12,6 @@ otp_expiry = 600
 [auth.email.template.magic_link]
 subject = "{{ .Token }}｜Monad Omikuji 登录验证码"
 content_path = "./supabase/templates/magic-link.html"
+
+[functions.record-draw]
+verify_jwt = false
