@@ -12,4 +12,18 @@ describe("demo persistence", () => {
     expect(canDrawDemoToday(wallet)).toBe(false);
     expect(canDrawDemoToday("0x2222222222222222222222222222222222222222")).toBe(true);
   });
+
+  it("limits guest trials per UTC day instead of forever", () => {
+    expect(storage.getGuestTrialCount()).toBe(0);
+    for (let index = 0; index < 5; index += 1) storage.useGuestTrial();
+    expect(storage.getGuestTrialCount()).toBe(5);
+    localStorage.setItem("monad-omikuji:guest-trials:v1", JSON.stringify({ date: "2000-01-01", count: 5 }));
+    expect(storage.getGuestTrialCount()).toBe(0);
+  });
+
+  it("migrates the old lifetime guest trial counter into a fresh daily counter", () => {
+    localStorage.setItem("monad-omikuji:guest-trials:v1", JSON.stringify(5));
+    expect(storage.getGuestTrialCount()).toBe(0);
+    expect(storage.useGuestTrial()).toBe(1);
+  });
 });

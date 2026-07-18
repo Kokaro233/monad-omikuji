@@ -6,6 +6,7 @@ const LAST_RESULT_KEY = "monad-omikuji:last-result:v1";
 const GUEST_TRIALS_KEY = "monad-omikuji:guest-trials:v1";
 export const GUEST_TRIAL_LIMIT = 5;
 export const DAILY_DRAW_LIMIT = 10;
+type GuestTrialState = { date: string; count: number };
 
 export const defaultProfile: DemoProfile = {
   id: "guest",
@@ -24,6 +25,17 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
+function utcDay() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readGuestTrials(): GuestTrialState {
+  const today = utcDay();
+  const value = read<GuestTrialState | number | null>(GUEST_TRIALS_KEY, null);
+  if (!value || typeof value === "number" || value.date !== today) return { date: today, count: 0 };
+  return { date: today, count: Math.min(GUEST_TRIAL_LIMIT, Math.max(0, Number(value.count) || 0)) };
+}
+
 export const storage = {
   getHistory: () => read<DrawResult[]>(HISTORY_KEY, []),
   saveHistory: (history: DrawResult[]) => localStorage.setItem(HISTORY_KEY, JSON.stringify(history)),
@@ -31,23 +43,24 @@ export const storage = {
   saveProfile: (profile: DemoProfile) => localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)),
   getLastResult: () => read<DrawResult | null>(LAST_RESULT_KEY, null),
   saveLastResult: (result: DrawResult) => localStorage.setItem(LAST_RESULT_KEY, JSON.stringify(result)),
-  getGuestTrialCount: () => read<number>(GUEST_TRIALS_KEY, 0),
+  getGuestTrialCount: () => readGuestTrials().count,
   useGuestTrial: () => {
-    const next = Math.min(GUEST_TRIAL_LIMIT, read<number>(GUEST_TRIALS_KEY, 0) + 1);
+    const current = readGuestTrials();
+    const next = { date: current.date, count: Math.min(GUEST_TRIAL_LIMIT, current.count + 1) };
     localStorage.setItem(GUEST_TRIALS_KEY, JSON.stringify(next));
-    return next;
+    return next.count;
   },
 };
 
 export function canDrawDemoToday(address: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = utcDay();
   return storage.getHistory().filter(
     (item) => item.walletAddress.toLowerCase() === address.toLowerCase() && item.createdAt.slice(0, 10) === today,
   ).length < DAILY_DRAW_LIMIT;
 }
 
 export function demoDrawsRemaining(address: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = utcDay();
   const used = storage.getHistory().filter((item) => item.walletAddress.toLowerCase() === address.toLowerCase() && item.createdAt.slice(0, 10) === today).length;
   return Math.max(0, DAILY_DRAW_LIMIT - used);
 }
