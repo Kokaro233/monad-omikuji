@@ -89,12 +89,12 @@ VITE_DEMO_MODE=false
 当前 Monad Testnet 部署：
 
 ```text
-合约地址：0x3b31775c81d0da5ca59574d29c1bf86a6fda4993
-部署交易：0x5912c2797e7e504c22338ce2c67acc10bc6adc3438a50979c43b8ea9895d8610
-区块高度：45675840
+合约地址：0x4be10ce76e9698978afa2414a2b65b8ed771823b
+部署交易：0xe8e6428b0ebfaa00df95b6469604495c02d492ebdd749deebe68e3eceac90f6c
+区块高度：45911686
 ```
 
-[在 Monad Explorer 查看已部署合约](https://testnet.monadexplorer.com/address/0x3b31775c81d0da5ca59574d29c1bf86a6fda4993)
+[在 Monad Explorer 查看已部署合约](https://testnet.monadexplorer.com/address/0x4be10ce76e9698978afa2414a2b65b8ed771823b)
 
 在不会提交到 Git 的本地 `.env` 中填写：
 

@@ -89,12 +89,12 @@ Never place a private key or a Supabase `service_role` key in a `VITE_` variable
 Current Monad Testnet deployment:
 
 ```text
-Contract: 0x3b31775c81d0da5ca59574d29c1bf86a6fda4993
-Transaction: 0x5912c2797e7e504c22338ce2c67acc10bc6adc3438a50979c43b8ea9895d8610
-Block: 45675840
+Contract: 0x4be10ce76e9698978afa2414a2b65b8ed771823b
+Transaction: 0xe8e6428b0ebfaa00df95b6469604495c02d492ebdd749deebe68e3eceac90f6c
+Block: 45911686
 ```
 
-[View the deployed contract on Monad Explorer](https://testnet.monadexplorer.com/address/0x3b31775c81d0da5ca59574d29c1bf86a6fda4993)
+[View the deployed contract on Monad Explorer](https://testnet.monadexplorer.com/address/0x4be10ce76e9698978afa2414a2b65b8ed771823b)
 
 Create a local `.env` that is never committed:
 

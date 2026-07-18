@@ -4,8 +4,8 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, LoaderCircle, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { decodeEventLog } from "viem";
-import { useAccount, useChainId, useWaitForTransactionReceipt, useWalletClient, useWriteContract } from "wagmi";
+import { decodeErrorResult, decodeEventLog, type Hex } from "viem";
+import { useAccount, useChainId, usePublicClient, useWaitForTransactionReceipt, useWalletClient, useWriteContract } from "wagmi";
 import { useOmikuji } from "@/src/components/OmikujiApp";
 import { monadTestnet } from "@/src/config/chain";
 import { fortuneContractAbi } from "@/src/config/contract";
@@ -35,7 +35,43 @@ function walletErrorCode(cause: unknown): number | undefined {
   return value.code ?? value.cause?.code;
 }
 
+function findHexErrorData(cause: unknown, seen = new Set<unknown>()): Hex | undefined {
+  if (typeof cause === "string") {
+    const [match] = cause.match(/0x[a-fA-F0-9]{8,}/) ?? [];
+    return match as Hex | undefined;
+  }
+  if (!cause || typeof cause !== "object" || seen.has(cause)) return undefined;
+  seen.add(cause);
+  const record = cause as Record<string, unknown>;
+  for (const key of ["data", "error", "cause", "details", "body"]) {
+    const found = findHexErrorData(record[key], seen);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function formatUtcTimestamp(seconds: bigint) {
+  return new Date(Number(seconds) * 1000).toISOString().replace(".000Z", " UTC");
+}
+
+function decodeContractError(cause: unknown) {
+  const data = findHexErrorData(cause);
+  if (!data) return undefined;
+  try {
+    const decoded = decodeErrorResult({ abi: fortuneContractAbi, data });
+    if (decoded.errorName === "DailyLimitReached") {
+      const [nextDrawTimestamp] = decoded.args;
+      return `链上返回 DailyLimitReached：这个钱包今天的正式求签次数已经用完，请在 ${formatUtcTimestamp(nextDrawTimestamp)} 后再来。`;
+    }
+    return `链上返回 ${decoded.errorName}，本次交易已在提交前停止。`;
+  } catch {
+    return undefined;
+  }
+}
+
 function friendlyWalletError(cause: unknown) {
+  const decoded = decodeContractError(cause);
+  if (decoded) return decoded;
   const code = walletErrorCode(cause);
   const message = cause instanceof Error ? cause.message.toLowerCase() : "";
   if (code === 4001 || message.includes("user rejected") || message.includes("user denied")) return "你取消了钱包操作。请在钱包中确认切换到 Monad Testnet 后再试。";
@@ -50,6 +86,7 @@ export function DrawView() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient({ chainId: monadTestnet.id });
   const { writeContractAsync } = useWriteContract();
   const [phase, setPhase] = useState<DrawPhase>("ready");
   const [error, setError] = useState("");
@@ -81,6 +118,18 @@ export function DrawView() {
       await delay(250);
     }
     throw new Error("wallet network switch did not finish");
+  }
+
+  async function preflightDraw() {
+    if (!publicClient || !address) throw new Error("钱包连接尚未准备好");
+    const request = {
+      address: runtime.contractAddress,
+      abi: fortuneContractAbi,
+      functionName: "drawFortune",
+      account: address,
+    } as const;
+    await publicClient.simulateContract(request);
+    return publicClient.estimateContractGas(request);
   }
 
   const character = phase === "ready" || phase === "error" ? "/assets/maiden-idle.png" : phase === "revealed" ? "/assets/maiden-happy.png" : "/assets/maiden-praying.png";
@@ -147,8 +196,9 @@ export function DrawView() {
         return;
       }
       if (chainId !== 10143) await ensureMonadNetwork();
+      const gas = await preflightDraw();
       setPhase("wallet");
-      const hash = await writeContractAsync({ address: runtime.contractAddress, abi: fortuneContractAbi, functionName: "drawFortune", chainId: 10143 });
+      const hash = await writeContractAsync({ address: runtime.contractAddress, abi: fortuneContractAbi, functionName: "drawFortune", chainId: 10143, gas });
       setTxHash(hash);
       setPhase("confirming");
     } catch (cause) {
