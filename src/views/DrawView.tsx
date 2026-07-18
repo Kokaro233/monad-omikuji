@@ -83,7 +83,7 @@ function friendlyWalletError(cause: unknown) {
 }
 
 export function DrawView() {
-  const { navigate, addResult } = useOmikuji();
+  const { navigate, addResult, profile } = useOmikuji();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
@@ -98,6 +98,7 @@ export function DrawView() {
   const hasConnectedWallet = Boolean(isConnected && address);
   const guestLimitReached = runtimeMode === "live" && !hasConnectedWallet && guestTrials >= GUEST_TRIAL_LIMIT;
   const drawWalletAddress = hasConnectedWallet ? address! : "0xDemoShrineKeeper000000000000000000000001";
+  const guestSaveLabel = profile.signedIn ? "将保存到当前账号，不会上链" : "暂存在本设备，登录后归入账号";
   const completedRef = useRef(false);
 
   useEffect(() => { setGuestTrials(storage.getGuestTrialCount()); }, []);
@@ -230,7 +231,7 @@ export function DrawView() {
       </section>
       <div className="dialogue-panel">
         <p>{phase === "confirming" && <LoaderCircle className="spin" size={20}/>} {dialogue[phase]}</p>
-        {!hasConnectedWallet && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>今日访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · 仅保存在本设备，不会补录上链</small>}
+        {!hasConnectedWallet && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>今日访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · {guestSaveLabel}</small>}
         {error && <small><AlertTriangle size={14}/>{error}</small>}
       </div>
       {guestLimitReached ? <ConnectButton.Custom>{({ openConnectModal }) => <button className="primary-button ritual-button" onClick={openConnectModal}><Sparkles/> 连接钱包继续求签</button>}</ConnectButton.Custom> : <button className="primary-button ritual-button" onClick={beginRitual} disabled={processing}>
