@@ -118,6 +118,7 @@ export function ProfileView() {
         <img src="/assets/maiden-praying.png" alt="" />
         <div><span>✦ 月下结缘 ✦</span><p>愿每一次连接，都通往一份好消息。</p></div>
       </div>
+      <p className="profile-made-by">made by Caro</p>
       {notice && <div className="toast-message">{notice}</div>}
     </div>
   );
