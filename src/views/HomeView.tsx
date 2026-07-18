@@ -40,7 +40,7 @@ export function HomeView() {
     ? "演示模式不计入链上"
     : countUnavailable
       ? "待同步验证数据接口"
-      : `${onchainDrawCount?.toLocaleString() ?? "—"} 份已核验 Monad 成功交易`;
+      : "已核验 Monad 成功交易";
   const totalDrawCount = onchainDrawCount === null
     ? null
     : onchainDrawCount + (guestDrawCount ?? 0);
@@ -62,10 +62,10 @@ export function HomeView() {
           </ol>
         </Frame>
         <div className="fortune-count">
-          <span>✦ 御签祈愿总数</span>
-          <strong>{totalDrawCount === null ? "—" : totalDrawCount.toLocaleString()} <i>✿</i></strong>
+          <span>✦ 已验证御签总数</span>
+          <strong>{onchainDrawCount === null ? "—" : onchainDrawCount.toLocaleString()} <i>✿</i></strong>
           <small>{countLabel}</small>
-          {guestDrawCount !== null && guestDrawCount > 0 && <em>含 {guestDrawCount.toLocaleString()} 份账号珍藏访客签</em>}
+          {totalDrawCount !== null && guestDrawCount !== null && guestDrawCount > 0 && <em>链上与访客祈愿共 {totalDrawCount.toLocaleString()} 份</em>}
         </div>
       </aside>
 
