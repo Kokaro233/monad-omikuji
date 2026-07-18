@@ -26,6 +26,12 @@ export interface FortuneDefinition {
   theme: "gold" | "rose" | "violet" | "blue" | "slate" | "red";
 }
 
+export interface FortuneStats {
+  career: number;
+  love: number;
+  wealth: number;
+}
+
 export interface DrawResult {
   id: string;
   fortuneId: number;

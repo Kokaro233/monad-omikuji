@@ -34,6 +34,12 @@ export async function signInWithGoogle() {
   if (error) throw error;
 }
 
+export async function signOutCloudAccount() {
+  if (!supabase) return;
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
 export async function updateCloudProfile(username: string, avatar = "🌸") {
   if (!supabase) return;
   const normalized = username.trim() || "御签守护者";

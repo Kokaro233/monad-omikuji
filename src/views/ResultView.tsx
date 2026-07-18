@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { BadgeCheck, ExternalLink, Heart, RotateCcw, Share2 } from "lucide-react";
 import { useState } from "react";
 import { useOmikuji } from "@/src/components/OmikujiApp";
-import { getFortune, stars } from "@/src/lib/fortunes";
+import { fortuneStats, getFortune, stars } from "@/src/lib/fortunes";
 import { runtime, shortAddress } from "@/src/lib/runtime";
 import { buildFortuneShareUrl, getSharedFortuneId } from "@/src/lib/share";
 
@@ -14,7 +14,9 @@ export function ResultView() {
   const sharedFortuneId = getSharedFortuneId(window.location.search);
   const isSharedView = sharedFortuneId !== null;
   if (!lastResult && !isSharedView) return <div className="empty-state"><span>?</span><h1>还没有揭晓御签</h1><p>走进神社，让命运为你选择一条道路。</p><button className="primary-button" onClick={() => navigate("draw")}>前往抽签</button></div>;
-  const fortune = getFortune(sharedFortuneId ?? lastResult!.fortuneId);
+  const currentResult = isSharedView ? null : lastResult;
+  const fortune = getFortune(sharedFortuneId ?? currentResult!.fortuneId);
+  const stats = fortuneStats(fortune.id, currentResult?.txHash ?? `shared-${fortune.id}`);
 
   async function copyShareText(value: string) {
     if (navigator.clipboard?.writeText) {
@@ -67,9 +69,9 @@ export function ResultView() {
             <h2>{fortune.nameZh}</h2>
             <div className="divider">✦</div>
             <dl className="stats">
-              <div><dt>事业</dt><dd>{stars(fortune.career)}</dd></div>
-              <div><dt>姻缘</dt><dd>{stars(fortune.love)}</dd></div>
-              <div><dt>财运</dt><dd>{stars(fortune.wealth)}</dd></div>
+              <div><dt>事业</dt><dd>{stars(stats.career)}</dd></div>
+              <div><dt>姻缘</dt><dd>{stars(stats.love)}</dd></div>
+              <div><dt>财运</dt><dd>{stars(stats.wealth)}</dd></div>
             </dl>
             <p>{fortune.messageZh}</p><small>{fortune.message}</small>
             <div className="card-flower">✿</div>

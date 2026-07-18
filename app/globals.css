@@ -51,15 +51,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pixel-frame { position: relative; padding: 5px; border: 1px solid #d58732; background: linear-gradient(135deg, #7b3c20, #2a1519); box-shadow: var(--shadow), inset 0 0 0 2px #160a0f; clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px); }
 .pixel-frame__inner { background: linear-gradient(145deg, rgba(45,20,18,.96), rgba(18,10,17,.96)); border: 1px solid rgba(255,196,98,.35); padding: 16px; }
 .panel-title { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 11px; color: #ffd480; font-size: 16px; letter-spacing: .04em; }
-.primary-button, .red-button, .purple-button, .google-button { border: 1px solid #ffc05c; cursor: pointer; font-weight: 800; letter-spacing: .02em; display: inline-flex; justify-content: center; align-items: center; gap: 10px; transition: transform .18s, filter .18s; }
+.primary-button, .red-button, .purple-button, .google-button, .sign-out-button { border: 1px solid #ffc05c; cursor: pointer; font-weight: 800; letter-spacing: .02em; display: inline-flex; justify-content: center; align-items: center; gap: 10px; transition: transform .18s, filter .18s; }
 .primary-button { min-height: 76px; padding: 15px 58px; color: #512213; font-size: clamp(20px, 2vw, 29px); text-shadow: 0 1px #fff2b1; background: url('/assets/ui-button-frame.png') center/100% 100% no-repeat; border: 0; filter: drop-shadow(0 0 9px #ffad32) drop-shadow(0 0 22px rgba(255,147,34,.65)); }
-.primary-button:hover:not(:disabled), .red-button:hover, .purple-button:hover, .google-button:hover { transform: translateY(-2px); filter: brightness(1.13); }
+.primary-button:hover:not(:disabled), .red-button:hover, .purple-button:hover, .google-button:hover, .sign-out-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.13); }
 .primary-button:disabled { cursor: wait; filter: grayscale(.15); opacity: .78; }
 .primary-button.compact { min-height: 57px; padding: 10px 40px; width: 100%; font-size: 15px; }
-.red-button, .purple-button, .google-button { min-height: 46px; padding: 8px 24px; }
+.red-button, .purple-button, .google-button, .sign-out-button { min-height: 46px; padding: 8px 24px; }
 .red-button { background: linear-gradient(#d9444a,#761d2d); box-shadow: inset 0 0 0 2px #4d141d; }
 .purple-button { background: linear-gradient(#8734c5,#3e1d76); box-shadow: inset 0 0 0 2px #29124b; }
 .google-button { width: 100%; color: #3a2027; background: #fff1d3; }
+.sign-out-button{width:100%;margin-top:10px;color:#ffd8df;background:linear-gradient(#4a2028,#251017);box-shadow:inset 0 0 0 2px #16080d;border-color:#b26373}
 .full { width: 100%; }
 
 /* Home */

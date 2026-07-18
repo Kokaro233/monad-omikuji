@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { FORTUNES, drawWeightedFortune, getFortune, stars } from "@/src/lib/fortunes";
+import { FORTUNES, drawWeightedFortune, fortuneStats, getFortune, stars } from "@/src/lib/fortunes";
 
 describe("fortune catalog", () => {
   it("contains the seven weighted Japanese outcomes totaling 100%", () => {
@@ -19,5 +19,12 @@ describe("fortune catalog", () => {
   it("falls back safely and renders five-star ratings", () => {
     expect(getFortune(999).kanji).toBe("吉");
     expect(stars(3)).toBe("★★★☆☆");
+  });
+
+  it("distributes per-card stars within each fortune's mood", () => {
+    expect(fortuneStats(3, "0xabc")).toEqual(fortuneStats(3, "0xabc"));
+    expect(Object.values(fortuneStats(3, "0xabc")).reduce((sum, value) => sum + value, 0)).toBe(10);
+    expect(Math.min(...Object.values(fortuneStats(3, "0xabc")))).toBeGreaterThanOrEqual(3);
+    expect(Object.values(fortuneStats(6, "0xabc")).reduce((sum, value) => sum + value, 0)).toBe(5);
   });
 });

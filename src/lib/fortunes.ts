@@ -1,4 +1,4 @@
-import type { FortuneDefinition } from "@/src/types";
+import type { FortuneDefinition, FortuneStats } from "@/src/types";
 
 export const FORTUNES: FortuneDefinition[] = [
   { id: 0, kanji: "大吉", name: "Great Blessing", nameZh: "鸿运当头", rarity: "SSR", weight: 5, career: 5, love: 5, wealth: 5, message: "Great things are coming your way. Stay positive and keep going!", messageZh: "盛运已至，心怀光明，勇敢前行。", theme: "gold" },
@@ -25,4 +25,42 @@ export function drawWeightedFortune(random = Math.random() * 100) {
 
 export function stars(value: number) {
   return `${"★".repeat(value)}${"☆".repeat(5 - value)}`;
+}
+
+const STAT_RULES: Record<number, { total: number; min: number; max: number }> = {
+  0: { total: 15, min: 5, max: 5 },
+  1: { total: 13, min: 4, max: 5 },
+  2: { total: 11, min: 3, max: 4 },
+  3: { total: 10, min: 3, max: 4 },
+  4: { total: 9, min: 2, max: 4 },
+  5: { total: 7, min: 2, max: 3 },
+  6: { total: 5, min: 1, max: 2 },
+};
+
+function seededNumber(seed: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+export function fortuneStats(fortuneId: number, seed: string): FortuneStats {
+  const rule = STAT_RULES[fortuneId] ?? STAT_RULES[3];
+  const keys = ["career", "love", "wealth"] as const;
+  const stats: FortuneStats = { career: rule.min, love: rule.min, wealth: rule.min };
+  let remaining = rule.total - rule.min * keys.length;
+  let cursor = seededNumber(`${fortuneId}:${seed || "omikuji"}`);
+
+  while (remaining > 0) {
+    const key = keys[cursor % keys.length];
+    if (stats[key] < rule.max) {
+      stats[key] += 1;
+      remaining -= 1;
+    }
+    cursor = Math.imul(cursor ^ 0x9e3779b9, 2654435761) >>> 0;
+  }
+
+  return stats;
 }
