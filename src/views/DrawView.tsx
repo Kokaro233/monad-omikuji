@@ -95,8 +95,9 @@ export function DrawView() {
   const [guestTrials, setGuestTrials] = useState(0);
   const { data: receipt } = useWaitForTransactionReceipt({ hash: txHash, confirmations: 1 });
   const processing = !["ready", "revealed", "error"].includes(phase);
-  const guestLimitReached = runtimeMode === "live" && !isConnected && guestTrials >= GUEST_TRIAL_LIMIT;
-  const demoAddress = address ?? "0xDemoShrineKeeper000000000000000000000001";
+  const hasConnectedWallet = Boolean(isConnected && address);
+  const guestLimitReached = runtimeMode === "live" && !hasConnectedWallet && guestTrials >= GUEST_TRIAL_LIMIT;
+  const drawWalletAddress = hasConnectedWallet ? address! : "0xDemoShrineKeeper000000000000000000000001";
   const completedRef = useRef(false);
 
   useEffect(() => { setGuestTrials(storage.getGuestTrialCount()); }, []);
@@ -143,7 +144,7 @@ export function DrawView() {
     const result: DrawResult = {
       id: `${hash}-${Date.now()}`,
       fortuneId,
-      walletAddress: demoAddress,
+      walletAddress: drawWalletAddress,
       txHash: hash,
       blockNumber: blockNumber?.toString(),
       createdAt: new Date().toISOString(),
@@ -174,13 +175,13 @@ export function DrawView() {
   async function beginRitual() {
     setError("");
     completedRef.current = false;
-    const guestTrial = runtimeMode === "live" && !isConnected;
+    const guestTrial = runtimeMode === "live" && !hasConnectedWallet;
     if (guestTrial && guestTrials >= GUEST_TRIAL_LIMIT) {
       setError("今天五次访客体验已经用完，请连接钱包正式上链，或在 UTC 00:00 后再来。 ");
       setPhase("error");
       return;
     }
-    if (runtimeMode === "demo" && !canDrawDemoToday(demoAddress)) {
+    if (runtimeMode === "demo" && !canDrawDemoToday(drawWalletAddress)) {
       setError("这个钱包今天的十次签运已经全部用完。请在 UTC 00:00 后再来，或连接另一个钱包。 ");
       setPhase("error");
       return;
@@ -229,7 +230,7 @@ export function DrawView() {
       </section>
       <div className="dialogue-panel">
         <p>{phase === "confirming" && <LoaderCircle className="spin" size={20}/>} {dialogue[phase]}</p>
-        {!isConnected && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>今日访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · 仅保存在本设备，不会补录上链</small>}
+        {!hasConnectedWallet && runtimeMode === "live" && guestTrials < GUEST_TRIAL_LIMIT && <small>今日访客体验剩余 {GUEST_TRIAL_LIMIT - guestTrials} 次 · 仅保存在本设备，不会补录上链</small>}
         {error && <small><AlertTriangle size={14}/>{error}</small>}
       </div>
       {guestLimitReached ? <ConnectButton.Custom>{({ openConnectModal }) => <button className="primary-button ritual-button" onClick={openConnectModal}><Sparkles/> 连接钱包继续求签</button>}</ConnectButton.Custom> : <button className="primary-button ritual-button" onClick={beginRitual} disabled={processing}>
