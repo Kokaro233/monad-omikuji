@@ -28,6 +28,7 @@ interface AppState {
   cloudSyncing: boolean;
   lastCloudSync: string | null;
   syncCloudHistory: () => Promise<number>;
+  resetToGuestSession: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -160,6 +161,14 @@ export function OmikujiApp() {
     }
   }, []);
 
+  const resetToGuestSession = useCallback(() => {
+    const guestHistory = storage.resetToDeviceGuestHistory();
+    setHistory(guestHistory);
+    setProfileState(defaultProfile);
+    storage.saveProfile(defaultProfile);
+    setLastCloudSync(null);
+  }, []);
+
   useEffect(() => {
     setRoute(routeFromPath(window.location.pathname));
     setHistory(storage.getHistory());
@@ -176,13 +185,11 @@ export function OmikujiApp() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) window.setTimeout(() => void syncCloudHistory().catch(() => undefined), 0);
       else {
-        setProfileState(defaultProfile);
-        storage.saveProfile(defaultProfile);
-        setLastCloudSync(null);
+        resetToGuestSession();
       }
     });
     return () => subscription.unsubscribe();
-  }, [syncCloudHistory]);
+  }, [syncCloudHistory, resetToGuestSession]);
 
   const navigate = useCallback((next: AppRoute) => {
     const path = next === "home" ? "/" : `/${next}`;
@@ -219,7 +226,7 @@ export function OmikujiApp() {
   }, [lastResult, profile.signedIn]);
 
   const setProfile = useCallback((next: DemoProfile) => { setProfileState(next); storage.saveProfile(next); }, []);
-  const value = useMemo(() => ({ route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory }), [route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory]);
+  const value = useMemo(() => ({ route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory, resetToGuestSession }), [route, navigate, history, lastResult, addResult, toggleFavorite, profile, setProfile, cloudSyncing, lastCloudSync, syncCloudHistory, resetToGuestSession]);
 
   return <Providers><AppContext.Provider value={value}><Shell /></AppContext.Provider></Providers>;
 }

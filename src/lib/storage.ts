@@ -36,9 +36,19 @@ function readGuestTrials(): GuestTrialState {
   return { date: today, count: Math.min(GUEST_TRIAL_LIMIT, Math.max(0, Number(value.count) || 0)) };
 }
 
+function isDeviceGuestResult(item: DrawResult) {
+  return item.mode === "demo" && item.walletAddress !== "访客体验";
+}
+
 export const storage = {
   getHistory: () => read<DrawResult[]>(HISTORY_KEY, []),
   saveHistory: (history: DrawResult[]) => localStorage.setItem(HISTORY_KEY, JSON.stringify(history)),
+  getDeviceGuestHistory: () => read<DrawResult[]>(HISTORY_KEY, []).filter(isDeviceGuestResult),
+  resetToDeviceGuestHistory: () => {
+    const guestHistory = read<DrawResult[]>(HISTORY_KEY, []).filter(isDeviceGuestResult);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(guestHistory));
+    return guestHistory;
+  },
   getProfile: () => read<DemoProfile>(PROFILE_KEY, defaultProfile),
   saveProfile: (profile: DemoProfile) => localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)),
   getLastResult: () => read<DrawResult | null>(LAST_RESULT_KEY, null),
