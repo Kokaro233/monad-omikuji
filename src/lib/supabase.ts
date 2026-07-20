@@ -174,3 +174,17 @@ export async function recordPublicVerifiedDraw(txHash: string) {
   });
   return response.ok;
 }
+
+export async function recordPublicGuestDraw(result: DrawResult) {
+  if (!supabase || runtimeMode !== "live" || result.mode !== "demo") return false;
+  const { error } = await supabase
+    .from("public_guest_draws")
+    .upsert({
+      local_id: result.id,
+      fortune_id: result.fortuneId,
+      tx_hash: result.txHash.toLowerCase(),
+      chain_id: result.chainId,
+      created_at: result.createdAt,
+    }, { onConflict: "chain_id,tx_hash", ignoreDuplicates: true });
+  return !error;
+}

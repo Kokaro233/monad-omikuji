@@ -12,7 +12,7 @@ import { fortuneContractAbi } from "@/src/config/contract";
 import { drawWeightedFortune } from "@/src/lib/fortunes";
 import { runtime, runtimeMode } from "@/src/lib/runtime";
 import { canDrawDemoToday, GUEST_TRIAL_LIMIT, storage } from "@/src/lib/storage";
-import { recordPublicVerifiedDraw } from "@/src/lib/supabase";
+import { recordPublicGuestDraw, recordPublicVerifiedDraw } from "@/src/lib/supabase";
 import type { DrawPhase, DrawResult } from "@/src/types";
 
 const dialogue: Record<DrawPhase, string> = {
@@ -163,6 +163,7 @@ export function DrawView() {
       mode: guestTrial ? "demo" : runtimeMode,
     };
     addResult(result);
+    if (guestTrial) void recordPublicGuestDraw(result).catch(() => undefined);
     setPhase("revealed");
     await delay(650);
     navigate("result");
